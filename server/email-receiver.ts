@@ -18,9 +18,21 @@ export function setupEmailRoutes(app: express.Express) {
   // Test endpoint
   app.post('/api/email/test', async (req, res) => {
     try {
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ message: 'OpenAI API key not configured' });
+      }
+
       // For testing, create a simplified email object that matches the expected structure
+      const testEmail = req.body.from || 'test@example.com';
+      
+      // First check if user exists
+      const user = await storage.getUserByEmail(testEmail);
+      if (!user) {
+        return res.status(404).json({ message: `No user found with email ${testEmail}. Please register first or use a registered email for testing.` });
+      }
+
       const email = {
-        from: { email: req.body.from || 'test@example.com' },
+        from: { email: testEmail },
         subject: 'Test Email',
         text: req.body.text || 'Create two test tasks: 1. Make volunteer application writable 2. Replace volunteer application on website',
         html: '<p>Test email content</p>'
