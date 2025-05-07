@@ -8,7 +8,7 @@ interface ProcessEmailOptions {
   username: string;
 }
 
-interface TaskOutput {
+export interface TaskOutput {
   id?: string;
   title: string;
   description: string;

@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { storage } from "./storage";
 import { processEmailWithAI, summarizeTasksWithAI } from "./openai";
 import { insertTaskSchema } from "@shared/schema";
+import { TaskOutput } from "./openai";
 
 export function setupTaskRoutes(app: Express) {
   // Get tasks for a board

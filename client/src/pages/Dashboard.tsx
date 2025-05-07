@@ -9,6 +9,7 @@ import EmailProcessor from "@/components/email/EmailProcessor";
 import TaskDetailsModal from "@/components/modals/TaskDetailsModal";
 import ProcessingModal from "@/components/modals/ProcessingModal";
 import ResultsModal from "@/components/modals/ResultsModal";
+import TaskSummaryModal, { TaskSummaryData } from "@/components/modals/TaskSummaryModal";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ import { Task, TaskBoard as TaskBoardType } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Sparkles } from "lucide-react";
 
 export default function Dashboard() {
   const { user, loading } = useAuth();
@@ -32,6 +34,9 @@ export default function Dashboard() {
   const [activeBoard, setActiveBoard] = useState<string | null>(null);
   const [showNewBoardDialog, setShowNewBoardDialog] = useState(false);
   const [newBoardTitle, setNewBoardTitle] = useState("");
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [taskSummary, setTaskSummary] = useState<TaskSummaryData | null>(null);
+  const [isSummarizing, setIsSummarizing] = useState(false);
 
   // Query to fetch boards
   const { data: boards = [], isLoading: boardsLoading } = useQuery<TaskBoardType[]>({ 
@@ -194,6 +199,51 @@ export default function Dashboard() {
       });
     }
   };
+  
+  // Function to handle task summarization
+  const handleSummarizeTasks = async () => {
+    if (!activeBoard) {
+      toast({
+        title: "Error",
+        description: "Please select a board to summarize",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSummarizing(true);
+    setShowSummaryModal(true);
+    
+    try {
+      const response = await fetch('/api/summarize-tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          boardId: activeBoard
+        }),
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to summarize tasks');
+      }
+      
+      const summary = await response.json();
+      setTaskSummary(summary);
+    } catch (error) {
+      console.error('Error summarizing tasks:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate task summary",
+        variant: "destructive"
+      });
+      setShowSummaryModal(false);
+    } finally {
+      setIsSummarizing(false);
+    }
+  };
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -243,6 +293,15 @@ export default function Dashboard() {
                     <polyline points="22,6 12,13 2,6" />
                   </svg>
                   <span>Process Email</span>
+                </button>
+                
+                <button 
+                  className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                  onClick={handleSummarizeTasks}
+                  disabled={!activeBoard || tasks.length === 0}
+                >
+                  <Sparkles className="w-5 h-5 mr-2" />
+                  <span>AI Summary</span>
                 </button>
               </div>
             </div>
