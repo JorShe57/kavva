@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Task } from "@shared/schema";
 import TaskCard from "./TaskCard";
 import QuickSummaryButton from "./QuickSummaryButton";
+import TaskDependencyGraph from "./TaskDependencyGraph";
 import { cn, statusColors } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { downloadAsPDF, generateShareableLink } from "@/lib/utils";
 import { TaskSummaryData } from "@/components/modals/TaskSummaryModal";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface TaskBoardProps {
   tasks: Task[];
@@ -128,8 +130,15 @@ export default function TaskBoard({
         </div>
       </div>
       
-      {/* Kanban Board */}
-      <div className="flex overflow-x-auto pb-4 scrollbar-hide">
+      {/* Task Board Content with Tabs */}
+      <Tabs defaultValue="kanban" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="kanban">Kanban Board</TabsTrigger>
+          <TabsTrigger value="dependencies">Task Dependencies</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="kanban" className="mt-0">
+          <div className="flex overflow-x-auto pb-4 scrollbar-hide">
         {/* To Do Column */}
         <div className="kanban-column mr-4 flex-shrink-0">
           <div className="bg-muted rounded-md p-4 w-80">
@@ -353,6 +362,12 @@ export default function TaskBoard({
           </div>
         </div>
       </div>
+        </TabsContent>
+        
+        <TabsContent value="dependencies" className="mt-0">
+          <TaskDependencyGraph boardId={boardId} height={500} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
