@@ -1,8 +1,8 @@
-import { useState } from "react";
+
+import { useState, DragEvent } from "react";
 import { TaskBoard } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -15,6 +15,7 @@ export default function EmailProcessor({ onSubmit, boards }: EmailProcessorProps
   const [emailContent, setEmailContent] = useState("");
   const [selectedBoard, setSelectedBoard] = useState("");
   const [assignmentOption, setAssignmentOption] = useState("assignToMe");
+  const [isDragging, setIsDragging] = useState(false);
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,19 +31,38 @@ export default function EmailProcessor({ onSubmit, boards }: EmailProcessorProps
     }
     
     if (selectedBoard === "new") {
-      // Handle "Create New Board" option
-      const newBoardName = prompt("Enter a name for the new board:");
-      if (!newBoardName || !newBoardName.trim()) {
-        return;
-      }
-      
-      // This would usually create a board first, then use its ID
-      // But for now we'll just alert the user that this feature is coming soon
       alert("Create new board feature is coming soon. Please select an existing board.");
       return;
     }
     
     onSubmit(emailContent, selectedBoard, assignmentOption);
+  };
+  
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    // Handle both dragged text and files
+    if (e.dataTransfer.types.includes('text/plain')) {
+      const text = e.dataTransfer.getData('text/plain');
+      setEmailContent(text);
+    } else if (e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      if (file.type === 'text/plain' || file.type === 'message/rfc822') {
+        const text = await file.text();
+        setEmailContent(text);
+      }
+    }
   };
   
   const handleClear = () => {
@@ -58,16 +78,25 @@ export default function EmailProcessor({ onSubmit, boards }: EmailProcessorProps
         <form onSubmit={handleSubmit}>
           <div className="mb-6">
             <Label htmlFor="email-content" className="block text-sm font-medium text-muted-foreground mb-2">
-              Paste email content below
+              Drag and drop email here
             </Label>
-            <Textarea 
-              id="email-content" 
-              rows={6} 
-              className="font-mono text-sm" 
-              placeholder="Paste your email content here..."
-              value={emailContent}
-              onChange={(e) => setEmailContent(e.target.value)}
-            />
+            <div 
+              className={`min-h-[200px] border-2 border-dashed rounded-lg p-4 transition-colors ${
+                isDragging ? 'border-primary bg-primary/10' : 'border-gray-300'
+              }`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <textarea 
+                id="email-content" 
+                rows={6} 
+                className="w-full h-full font-mono text-sm bg-transparent resize-none focus:outline-none" 
+                placeholder="Drag and drop your email here or click to paste..."
+                value={emailContent}
+                onChange={(e) => setEmailContent(e.target.value)}
+              />
+            </div>
           </div>
           
           <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
