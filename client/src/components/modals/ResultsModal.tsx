@@ -46,12 +46,12 @@ export default function ResultsModal({ isOpen, tasks, onClose, onAddTasks }: Res
       <DialogContent className="sm:max-w-3xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Extracted Tasks</DialogTitle>
+          <DialogDescription>
+            The AI successfully extracted the following tasks from your email.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="py-4">
-          <p className="text-muted-foreground mb-6">
-            The AI successfully extracted the following tasks from your email:
-          </p>
           
           <ScrollArea className="h-[300px] rounded-md">
             <div className="space-y-4 pr-4">

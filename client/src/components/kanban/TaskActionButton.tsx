@@ -30,12 +30,12 @@ export default function TaskActionButton({ task, onStatusChange }: TaskActionBut
       // First update the task in the database
       const updatedTask = await apiRequest(
         'PATCH',
-        `/api/tasks/${task.id}`,
+        `/api/tasks/${String(task.id)}`,
         { status: 'completed', completedAt: new Date().toISOString() }
       ).then(res => res.json());
       
       // Then trigger the gamification event
-      await triggerTaskCompleted(task.id);
+      await triggerTaskCompleted(String(task.id));
       
       // Update UI
       if (onStatusChange) {
@@ -71,7 +71,7 @@ export default function TaskActionButton({ task, onStatusChange }: TaskActionBut
       // Update the task in the database
       const updatedTask = await apiRequest(
         'PATCH',
-        `/api/tasks/${task.id}`,
+        `/api/tasks/${String(task.id)}`,
         { status: 'in_progress', completedAt: null }
       ).then(res => res.json());
       

@@ -10,15 +10,31 @@ interface TaskCardProps {
   onStatusChange?: (task: Task, newStatus: string) => void;
 }
 
-export default function TaskCard({ task, onClick }: TaskCardProps) {
+export default function TaskCard({ task, onClick, onStatusChange }: TaskCardProps) {
   const isCompleted = task.status === "completed";
   
-  const priorityClass = priorityColors[task.priority] || "text-muted-foreground bg-muted";
+  // Handle priority class with proper type safety
+  const priorityKey = task.priority as keyof typeof priorityColors;
+  const priorityClass = priorityColors[priorityKey] || "text-muted-foreground bg-muted";
+  
+  const [showActions, setShowActions] = useState(false);
+  
+  const handleClick = (e: React.MouseEvent) => {
+    // Only trigger onClick if the user didn't click on the task action button
+    if (e.target === e.currentTarget || (e.target as HTMLElement).closest('.task-actions') === null) {
+      onClick();
+    }
+  };
+  
+  const handleMouseEnter = () => setShowActions(true);
+  const handleMouseLeave = () => setShowActions(false);
   
   return (
     <div 
-      className="task-card bg-white rounded-md shadow-sm p-4 cursor-pointer"
-      onClick={onClick}
+      className="task-card bg-white rounded-md shadow-sm p-4 cursor-pointer relative"
+      onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div className="flex justify-between items-start mb-3">
         <h4 className={cn("font-medium text-foreground", isCompleted && "line-through")}>
@@ -49,7 +65,7 @@ export default function TaskCard({ task, onClick }: TaskCardProps) {
             </svg>
           )}
           <span className="text-xs text-muted-foreground">
-            {formatDate(task.dueDate)}
+            {task.dueDate ? formatDate(task.dueDate) : "No due date"}
           </span>
         </div>
         
@@ -69,6 +85,13 @@ export default function TaskCard({ task, onClick }: TaskCardProps) {
           </div>
         )}
       </div>
+      
+      {/* Task Action Button */}
+      {showActions && (
+        <div className="task-actions absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-white via-white to-transparent">
+          <TaskActionButton task={task} onStatusChange={onStatusChange} />
+        </div>
+      )}
     </div>
   );
 }
