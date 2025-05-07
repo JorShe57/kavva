@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -40,6 +40,7 @@ export const tasks = pgTable("tasks", {
   boardId: integer("board_id").notNull().references(() => taskBoards.id),
   emailSource: text("email_source"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
 });
 
 export const insertTaskSchema = createInsertSchema(tasks).pick({
@@ -53,6 +54,60 @@ export const insertTaskSchema = createInsertSchema(tasks).pick({
   emailSource: true,
 });
 
+// Achievement badges schema
+export const achievementBadges = pgTable("achievement_badges", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description").notNull(),
+  icon: text("icon").notNull(),  // Icon name or SVG path
+  type: text("type").notNull(),  // Category: "task", "board", "productivity", "streak"
+  threshold: integer("threshold").notNull(),  // Value needed to earn this badge
+  level: integer("level").notNull().default(1), // Badge level (bronze, silver, gold)
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertAchievementBadgeSchema = createInsertSchema(achievementBadges).pick({
+  name: true,
+  description: true,
+  icon: true,
+  type: true,
+  threshold: true,
+  level: true,
+});
+
+// User achievements schema (tracks earned badges)
+export const userAchievements = pgTable("user_achievements", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  badgeId: integer("badge_id").notNull().references(() => achievementBadges.id),
+  earnedAt: timestamp("earned_at").defaultNow().notNull(),
+  displayed: boolean("displayed").notNull().default(false), // Whether it's been shown to user
+});
+
+export const insertUserAchievementSchema = createInsertSchema(userAchievements).pick({
+  userId: true,
+  badgeId: true,
+});
+
+// User productivity stats schema
+export const userStats = pgTable("user_stats", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id).unique(),
+  tasksCompleted: integer("tasks_completed").notNull().default(0),
+  highPriorityCompleted: integer("high_priority_completed").notNull().default(0),
+  tasksCreated: integer("tasks_created").notNull().default(0),
+  aiTasksGenerated: integer("ai_tasks_generated").notNull().default(0),
+  daysStreak: integer("days_streak").notNull().default(0),
+  lastActive: timestamp("last_active").defaultNow().notNull(),
+  weeklyStats: jsonb("weekly_stats").notNull().default('{}'),  // Stores weekly completion stats
+  points: integer("points").notNull().default(0),  // Gamification points
+  level: integer("level").notNull().default(1),
+});
+
+export const insertUserStatsSchema = createInsertSchema(userStats).pick({
+  userId: true,
+});
+
 // Export types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -62,3 +117,12 @@ export type InsertTaskBoard = z.infer<typeof insertTaskBoardSchema>;
 
 export type Task = typeof tasks.$inferSelect;
 export type InsertTask = z.infer<typeof insertTaskSchema>;
+
+export type AchievementBadge = typeof achievementBadges.$inferSelect;
+export type InsertAchievementBadge = z.infer<typeof insertAchievementBadgeSchema>;
+
+export type UserAchievement = typeof userAchievements.$inferSelect;
+export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;
+
+export type UserStats = typeof userStats.$inferSelect;
+export type InsertUserStats = z.infer<typeof insertUserStatsSchema>;

@@ -3,7 +3,10 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuthRoutes } from "./auth";
 import { setupTaskRoutes } from "./tasks";
+import { setupGamificationRoutes } from "./gamification-routes";
 import { processEmailWithAI } from "./openai";
+import { initializeAchievementBadges } from "./gamification";
+import migrate from "./db-migrate";
 import session from "express-session";
 import passport from "passport";
 import path from "path";
@@ -31,6 +34,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Set up task-related routes
   setupTaskRoutes(app);
+  
+  // Set up gamification routes
+  setupGamificationRoutes(app);
+  
+  // Run database migrations and initialize achievement badges
+  try {
+    await migrate();
+    await initializeAchievementBadges();
+    console.log("Database migration and achievement initialization completed successfully");
+  } catch (error) {
+    console.error("Error during database setup:", error);
+  }
 
   // Board routes
   app.get("/api/boards", async (req, res) => {
