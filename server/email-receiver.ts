@@ -23,15 +23,19 @@ export function setupEmailRoutes(app: Express) {
       const email = new SendGridInbound.Parse(req.body);
       
       // Extract email content
-      const emailPayload = {
+      const emailPayload: EmailPayload = {
         from: email.from.email,
         subject: email.subject,
         text: email.text,
         html: email.html,
         timestamp: new Date().toISOString()
       };
-    try {
-      const email: EmailPayload = req.body;
+
+      // Find user by email address
+      const user = await storage.getUserByEmail(emailPayload.from);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found for this email' });
+      }
       
       // Find user by email address
       const user = await storage.getUserByEmail(email.from);
