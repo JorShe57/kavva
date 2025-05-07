@@ -1,81 +1,35 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AchievementGallery from "@/components/gamification/AchievementGallery";
 import UserStats from "@/components/gamification/UserStats";
 import AchievementNotification from "@/components/gamification/AchievementNotification";
-import { queryClient, GamificationAPI } from "@/lib/queryClient";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { RocketIcon, AlertTriangle } from "lucide-react";
-
-interface UserStatsData {
-  userId: number;
-  tasksCompleted: number;
-  highPriorityCompleted: number;
-  tasksCreated: number;
-  aiTasksGenerated: number;
-  daysStreak: number;
-  points: number;
-  level: number;
-  weeklyStats?: Record<string, any>;
-}
-
-interface AchievementBadgeData {
-  id: number;
-  name: string;
-  description: string;
-  icon: string;
-  type: string;
-  level: number;
-  earned: boolean;
-  earnedAt?: Date;
-}
-
-interface AchievementData {
-  id: number;
-  name: string;
-  description: string;
-  icon: string;
-  type: string;
-  level: number;
-  earnedAt: Date;
-}
+import { useGamification, AchievementData } from "@/hooks/use-gamification";
 
 export default function UserProfile() {
   const { user } = useAuth();
   const [showAchievement, setShowAchievement] = useState(false);
   const [currentAchievement, setCurrentAchievement] = useState<AchievementData | null>(null);
   
-  // Get user stats
-  const { 
-    data: stats, 
-    isLoading: statsLoading,
-    error: statsError
-  } = useQuery<UserStatsData>({
-    queryKey: ['/api/gamification/stats'],
-    enabled: !!user,
-  });
-  
-  // Get all user badges
-  const { 
-    data: badges, 
-    isLoading: badgesLoading,
-    error: badgesError
-  } = useQuery<AchievementBadgeData[]>({
-    queryKey: ['/api/gamification/badges'],
-    enabled: !!user,
-  });
-  
-  // Get new achievements
-  const { 
-    data: newAchievements, 
-    isLoading: newAchievementsLoading 
-  } = useQuery<AchievementData[]>({
-    queryKey: ['/api/gamification/new-achievements'],
-    enabled: !!user,
-    refetchOnWindowFocus: false,
-  });
+  const {
+    // Data
+    stats,
+    allBadges,
+    newAchievements,
+    
+    // Loading states
+    statsLoading,
+    allBadgesLoading,
+    
+    // Error states
+    statsError,
+    allBadgesError,
+    
+    // Actions
+    markAchievementsAsViewed
+  } = useGamification();
   
   // Show achievement notification for new achievements
   useEffect(() => {
@@ -85,20 +39,17 @@ export default function UserProfile() {
       setShowAchievement(true);
       
       // Mark as displayed
-      const markDisplayed = async () => {
+      const handleView = async () => {
         try {
-          await GamificationAPI.markAchievementsAsViewed([achievement.id]);
-          
-          // Invalidate queries
-          queryClient.invalidateQueries({ queryKey: ['/api/gamification/new-achievements'] });
+          await markAchievementsAsViewed([achievement.id]);
         } catch (error) {
           console.error('Failed to mark achievement as displayed:', error);
         }
       };
       
-      markDisplayed();
+      handleView();
     }
-  }, [newAchievements]);
+  }, [newAchievements, markAchievementsAsViewed]);
   
   // Handle closing the achievement notification
   const handleAchievementClose = () => {
@@ -116,7 +67,7 @@ export default function UserProfile() {
   };
   
   // Handle error states
-  if ((statsError || badgesError) && !statsLoading && !badgesLoading) {
+  if ((statsError || allBadgesError) && !statsLoading && !allBadgesLoading) {
     return (
       <div className="container py-10">
         <Alert variant="destructive">
@@ -129,18 +80,6 @@ export default function UserProfile() {
       </div>
     );
   }
-  
-  // Default stats if not loaded
-  const defaultStats: UserStatsData = {
-    userId: user?.id || 0,
-    tasksCompleted: 0,
-    highPriorityCompleted: 0,
-    tasksCreated: 0,
-    aiTasksGenerated: 0,
-    daysStreak: 0,
-    points: 0,
-    level: 1,
-  };
   
   return (
     <div className="container py-6 space-y-8">
@@ -167,14 +106,14 @@ export default function UserProfile() {
           </Alert>
           
           <AchievementGallery 
-            badges={badges || []} 
-            loading={badgesLoading} 
+            badges={allBadges || []} 
+            loading={allBadgesLoading} 
           />
         </TabsContent>
         
         <TabsContent value="stats" className="space-y-4 mt-6">
           <UserStats 
-            stats={stats || defaultStats}
+            stats={stats}
             loading={statsLoading}
           />
         </TabsContent>

@@ -1,0 +1,152 @@
+import React from 'react';
+import { Button } from "@/components/ui/button";
+import { 
+  CheckCircle, 
+  RotateCcw, 
+  AlertCircle,
+  Loader2
+} from "lucide-react";
+import { Task } from "@shared/schema";
+import { useGamification } from "@/hooks/use-gamification";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
+
+interface TaskActionButtonProps {
+  task: Task;
+  onStatusChange?: (task: Task, newStatus: string) => void;
+}
+
+export default function TaskActionButton({ task, onStatusChange }: TaskActionButtonProps) {
+  const { triggerTaskCompleted } = useGamification();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = React.useState(false);
+  
+  const handleMarkComplete = async () => {
+    if (task.status === 'completed') return;
+    
+    setIsLoading(true);
+    try {
+      // First update the task in the database
+      const updatedTask = await apiRequest(
+        'PATCH',
+        `/api/tasks/${task.id}`,
+        { status: 'completed', completedAt: new Date().toISOString() }
+      ).then(res => res.json());
+      
+      // Then trigger the gamification event
+      await triggerTaskCompleted(task.id);
+      
+      // Update UI
+      if (onStatusChange) {
+        onStatusChange(updatedTask, 'completed');
+      }
+      
+      // Show success message
+      toast({
+        title: "Task completed",
+        description: "You've earned points for completing this task!",
+      });
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: [`/api/tasks/${task.id}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+    } catch (error) {
+      console.error('Failed to complete task:', error);
+      toast({
+        title: "Failed to complete task",
+        description: "Please try again later",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleReopenTask = async () => {
+    if (task.status !== 'completed') return;
+    
+    setIsLoading(true);
+    try {
+      // Update the task in the database
+      const updatedTask = await apiRequest(
+        'PATCH',
+        `/api/tasks/${task.id}`,
+        { status: 'in_progress', completedAt: null }
+      ).then(res => res.json());
+      
+      // Update UI
+      if (onStatusChange) {
+        onStatusChange(updatedTask, 'in_progress');
+      }
+      
+      // Show success message
+      toast({
+        title: "Task reopened",
+        description: "Task has been moved back to in-progress",
+      });
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: [`/api/tasks/${task.id}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+    } catch (error) {
+      console.error('Failed to reopen task:', error);
+      toast({
+        title: "Failed to reopen task",
+        description: "Please try again later",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  if (isLoading) {
+    return (
+      <Button variant="ghost" size="sm" disabled className="w-full justify-start">
+        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+        {task.status === 'completed' ? 'Reopening...' : 'Completing...'}
+      </Button>
+    );
+  }
+  
+  if (task.status === 'completed') {
+    return (
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        onClick={handleReopenTask}
+        className="w-full justify-start text-muted-foreground hover:text-foreground"
+      >
+        <RotateCcw className="h-4 w-4 mr-2" />
+        Reopen Task
+      </Button>
+    );
+  }
+  
+  if (task.priority === 'high') {
+    return (
+      <Button 
+        variant="ghost" 
+        size="sm"
+        onClick={handleMarkComplete} 
+        className="w-full justify-start text-amber-500 hover:text-amber-600 hover:bg-amber-50"
+      >
+        <AlertCircle className="h-4 w-4 mr-2" />
+        Complete High Priority
+      </Button>
+    );
+  }
+  
+  return (
+    <Button 
+      variant="ghost" 
+      size="sm"
+      onClick={handleMarkComplete}
+      className="w-full justify-start text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+    >
+      <CheckCircle className="h-4 w-4 mr-2" />
+      Mark Complete
+    </Button>
+  );
+}

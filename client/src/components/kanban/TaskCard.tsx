@@ -1,10 +1,13 @@
 import { Task } from "@shared/schema";
 import { formatDate, getInitials, priorityColors } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import TaskActionButton from "./TaskActionButton";
+import { useState } from "react";
 
 interface TaskCardProps {
   task: Task;
   onClick: () => void;
+  onStatusChange?: (task: Task, newStatus: string) => void;
 }
 
 export default function TaskCard({ task, onClick }: TaskCardProps) {
