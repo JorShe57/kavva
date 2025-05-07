@@ -38,7 +38,11 @@ export default function ResultsModal({ isOpen, tasks, onClose, onAddTasks }: Res
   };
   
   const handleAddTasks = () => {
-    onAddTasks(selectedTasks);
+    try {
+      onAddTasks(selectedTasks);
+    } catch (error) {
+      console.error('Failed to add tasks:', error);
+    }
   };
 
   return (
