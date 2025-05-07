@@ -13,7 +13,7 @@ import passport from "passport";
 import path from "path";
 import { logger } from "./middleware/logger";
 import { getDbConnection } from "./database/connection-manager";
-import { getCacheStats } from "./services/cacheService";
+import { getCacheStats, clearAllCaches, userCache } from "./services/cacheService";
 import compression from "compression";
 
 export async function registerRoutes(app: Express): Promise<Server> {
