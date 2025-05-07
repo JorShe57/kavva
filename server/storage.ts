@@ -14,6 +14,9 @@ import {
   userCache, boardCache, taskCache, 
   getOrSetCache, clearCache 
 } from "./services/cacheService";
+import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import { pool } from "./db";
 
 export interface IStorage {
   // User methods
@@ -32,9 +35,24 @@ export interface IStorage {
   createTask(task: InsertTask): Promise<Task>;
   updateTask(id: string, task: Partial<Task>): Promise<Task>;
   deleteTask(id: string): Promise<void>;
+  
+  // Session store for authentication persistence
+  sessionStore: any;
 }
 
 export class DatabaseStorage implements IStorage {
+  // Session store for PostgreSQL
+  public sessionStore: session.Store;
+
+  constructor() {
+    // Create PostgreSQL session store
+    const PgStore = connectPgSimple(session);
+    this.sessionStore = new PgStore({
+      pool,
+      tableName: 'session', // Use default session table name
+      createTableIfMissing: true,
+    });
+  }
   // User methods
   async getUser(id: number): Promise<User | undefined> {
     const storageLogger = logger.child('storage');

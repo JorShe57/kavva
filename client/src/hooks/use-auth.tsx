@@ -37,25 +37,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Check if user is logged in - Debounced
-    const debouncedCheckAuthStatus = debounce(async () => {
+    // Function to check auth status
+    const checkAuthStatus = async () => {
       try {
+        setLoading(true);
         const res = await fetch("/api/auth/me", {
           credentials: "include",
+          headers: {
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+          }
         });
 
         if (res.ok) {
           const userData = await res.json();
           setUser(userData);
+        } else {
+          // Clear user on 401
+          setUser(null);
         }
       } catch (err) {
         console.error("Authentication check failed:", err);
+        setUser(null);
       } finally {
         setLoading(false);
       }
-    }, 1000);
+    };
 
-    debouncedCheckAuthStatus();
+    // Run once on initial load
+    checkAuthStatus();
+
+    // Set up a periodic refresh to check auth status
+    const authCheckInterval = setInterval(checkAuthStatus, 5 * 60 * 1000); // Check every 5 minutes
+
+    return () => {
+      clearInterval(authCheckInterval);
+    };
   }, []);
 
   const login = async (username: string, password: string) => {

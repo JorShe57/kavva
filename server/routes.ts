@@ -69,15 +69,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   });
   
-  // Set up session middleware
+  // Set up session middleware with PostgreSQL session store
   app.use(
     session({
+      store: storage.sessionStore,
       secret: process.env.SESSION_SECRET || "autotrack-ai-secret",
       resave: false,
       saveUninitialized: false,
       cookie: {
         secure: process.env.NODE_ENV === "production",
         maxAge: 24 * 60 * 60 * 1000, // 1 day
+        httpOnly: true,
+        sameSite: 'lax'
       },
     })
   );
