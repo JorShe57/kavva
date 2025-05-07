@@ -226,7 +226,7 @@ I can help you with recommendations, research, draft emails, or even complete si
                   >
                     {message.role !== "user" && (
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src="/ai-avatar.png" alt="AI" />
+                        <AvatarImage src="/ai-avatar.svg" alt="AI" />
                         <AvatarFallback>AI</AvatarFallback>
                       </Avatar>
                     )}
@@ -256,7 +256,7 @@ I can help you with recommendations, research, draft emails, or even complete si
               {isProcessing && (
                 <div className="flex items-start">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src="/ai-avatar.png" alt="AI" />
+                    <AvatarImage src="/ai-avatar.svg" alt="AI" />
                     <AvatarFallback>AI</AvatarFallback>
                   </Avatar>
                   <div className="mx-2 rounded-lg p-4 bg-muted max-w-[80%]">
