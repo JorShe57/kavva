@@ -49,7 +49,7 @@ export function setupTaskRoutes(app: Express) {
       }
       
       // Verify board belongs to user
-      const board = await storage.getBoard(result.data.boardId);
+      const board = await storage.getBoard(String(result.data.boardId));
       
       if (!board) {
         return res.status(404).json({ message: "Board not found" });
@@ -168,6 +168,12 @@ export function setupTaskRoutes(app: Express) {
     try {
       const { emailContent, boardId, assignmentOption } = req.body;
       
+      console.log("Process email request:", {
+        emailContentLength: emailContent?.length || 0,
+        boardId,
+        assignmentOption
+      });
+      
       if (!emailContent || !boardId) {
         return res.status(400).json({ message: "Email content and board ID are required" });
       }
@@ -183,11 +189,15 @@ export function setupTaskRoutes(app: Express) {
         return res.status(403).json({ message: "Forbidden" });
       }
       
+      console.log("Starting AI processing of email...");
+      
       // Process the email with AI
       const tasks = await processEmailWithAI(emailContent, {
         assignmentOption,
         username: (req.user as any).username,
       });
+      
+      console.log("AI processing completed, extracted tasks:", tasks);
       
       // Add board ID to each task
       const tasksWithBoardId = tasks.map(task => ({
@@ -199,7 +209,7 @@ export function setupTaskRoutes(app: Express) {
       res.json({ tasks: tasksWithBoardId });
     } catch (error) {
       console.error("Error processing email:", error);
-      res.status(500).json({ message: "Failed to process email" });
+      res.status(500).json({ message: "Failed to process email", error: String(error) });
     }
   });
 }
