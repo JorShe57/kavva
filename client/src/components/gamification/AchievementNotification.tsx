@@ -9,8 +9,19 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import AchievementBadge from "./AchievementBadge";
-import { Award } from "lucide-react";
-import * as LucideIcons from "lucide-react";
+import { 
+  Award, 
+  Check, 
+  Star, 
+  Zap, 
+  Trophy, 
+  Target, 
+  Medal, 
+  Flame, 
+  Sparkles,
+  Bot,
+  Calendar
+} from "lucide-react";
 import confetti from "canvas-confetti";
 
 interface AchievementNotificationProps {
@@ -60,13 +71,35 @@ export default function AchievementNotification({
     3: "Gold",
   }[achievement.level] || "Bronze";
 
-  // Get icon component dynamically
-  const getPointsIcon = () => {
-    if (achievement.icon in LucideIcons) {
-      const Icon = LucideIcons[achievement.icon as keyof typeof LucideIcons];
-      return <Icon className="mr-2 h-4 w-4 text-primary" />;
+  // Get points icon based on achievement icon name
+  const renderPointsIcon = () => {
+    const iconName = achievement?.icon || "";
+    const iconClass = "mr-2 h-4 w-4 text-primary";
+    
+    switch (iconName) {
+      case "Check":
+        return <Check className={iconClass} />;
+      case "Star":
+        return <Star className={iconClass} />;
+      case "Zap":
+        return <Zap className={iconClass} />;
+      case "Trophy":
+        return <Trophy className={iconClass} />;
+      case "Target":
+        return <Target className={iconClass} />;
+      case "Medal":
+        return <Medal className={iconClass} />;
+      case "Flame":
+        return <Flame className={iconClass} />;
+      case "Sparkles":
+        return <Sparkles className={iconClass} />;
+      case "Bot":
+        return <Bot className={iconClass} />;
+      case "Calendar":
+        return <Calendar className={iconClass} />;
+      default:
+        return <Award className={iconClass} />;
     }
-    return <Award className="mr-2 h-4 w-4 text-primary" />;
   };
 
   return (
@@ -101,7 +134,7 @@ export default function AchievementNotification({
           </p>
           
           <div className="mt-4 inline-flex items-center px-4 py-2 rounded-full bg-muted">
-            {getPointsIcon()}
+            {renderPointsIcon()}
             <span className="text-sm">+25 points</span>
           </div>
         </div>

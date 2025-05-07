@@ -1,5 +1,4 @@
 import React from "react";
-import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   Award, 
@@ -8,7 +7,7 @@ import {
   Zap, 
   Trophy, 
   Target, 
-  Badge, 
+  Medal, 
   Flame, 
   Sparkles,
   Bot,
@@ -51,8 +50,8 @@ export default function AchievementBadge({
         return <Trophy className={iconClass} />;
       case "Target":
         return <Target className={iconClass} />;
-      case "Badge":
-        return <Badge className={iconClass} />;
+      case "Medal":
+        return <Medal className={iconClass} />;
       case "Flame":
         return <Flame className={iconClass} />;
       case "Sparkles":
