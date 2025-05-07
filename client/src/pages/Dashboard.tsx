@@ -10,6 +10,7 @@ import TaskDetailsModal from "@/components/modals/TaskDetailsModal";
 import ProcessingModal from "@/components/modals/ProcessingModal";
 import ResultsModal from "@/components/modals/ResultsModal";
 import TaskSummaryModal, { TaskSummaryData } from "@/components/modals/TaskSummaryModal";
+import TaskSummaryProcessor from "@/components/summary/TaskSummaryProcessor";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -225,16 +226,7 @@ export default function Dashboard() {
   };
   
   // Function to handle task summarization
-  const handleSummarizeTasks = async () => {
-    if (!activeBoard) {
-      toast({
-        title: "Error",
-        description: "Please select a board to summarize",
-        variant: "destructive"
-      });
-      return;
-    }
-    
+  const handleSummarizeTasks = async (boardId: string) => {
     setIsSummarizing(true);
     setShowSummaryModal(true);
     
@@ -245,7 +237,7 @@ export default function Dashboard() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          boardId: activeBoard
+          boardId
         }),
         credentials: 'include'
       });
