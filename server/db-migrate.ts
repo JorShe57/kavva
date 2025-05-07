@@ -73,6 +73,16 @@ async function migrate() {
       WHERE email IS NOT NULL;
     `);
     console.log("Added email column to users table");
+    
+    // Add task dependency columns to tasks table
+    await db.execute(sql`
+      ALTER TABLE tasks 
+      ADD COLUMN IF NOT EXISTS dependent_task_ids TEXT[] DEFAULT '{}';
+      
+      ALTER TABLE tasks 
+      ADD COLUMN IF NOT EXISTS prerequisite_task_ids TEXT[] DEFAULT '{}';
+    `);
+    console.log("Added task dependency columns to tasks table");
 
     console.log("Migration completed successfully");
   } catch (error) {

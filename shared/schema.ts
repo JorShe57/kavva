@@ -43,6 +43,10 @@ export const tasks = pgTable("tasks", {
   emailSource: text("email_source"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   completedAt: timestamp("completed_at"),
+  // Store array of dependent task IDs (tasks that depend on this task)
+  dependentTaskIds: text("dependent_task_ids").array(),
+  // Store array of prerequisite task IDs (tasks that this task depends on)
+  prerequisiteTaskIds: text("prerequisite_task_ids").array(),
 });
 
 export const insertTaskSchema = createInsertSchema(tasks).pick({
@@ -54,6 +58,8 @@ export const insertTaskSchema = createInsertSchema(tasks).pick({
   status: true,
   boardId: true,
   emailSource: true,
+  dependentTaskIds: true,
+  prerequisiteTaskIds: true,
 });
 
 // Achievement badges schema

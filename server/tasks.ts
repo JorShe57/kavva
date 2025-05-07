@@ -299,4 +299,246 @@ export function setupTaskRoutes(app: Express) {
       res.status(500).json({ message: "Failed to summarize tasks", error: String(error) });
     }
   });
+  
+  // Get task dependencies
+  app.get("/api/tasks/:id/dependencies", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const taskId = req.params.id;
+      const task = await storage.getTask(taskId);
+      
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
+      // Verify task's board belongs to user
+      const board = await storage.getBoard(String(task.boardId));
+      
+      if (!board || board.userId !== (req.user as any).id) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      // Get prerequisite tasks (tasks that this task depends on)
+      const prerequisitesPromises = task.prerequisiteTaskIds 
+        ? task.prerequisiteTaskIds.map(id => storage.getTask(id))
+        : [];
+      
+      // Get dependent tasks (tasks that depend on this task)
+      const dependentsPromises = task.dependentTaskIds
+        ? task.dependentTaskIds.map(id => storage.getTask(id))
+        : [];
+      
+      const [prerequisites, dependents] = await Promise.all([
+        Promise.all(prerequisitesPromises),
+        Promise.all(dependentsPromises)
+      ]);
+      
+      // Filter out any undefined results (tasks that might have been deleted)
+      const validPrerequisites = prerequisites.filter(Boolean);
+      const validDependents = dependents.filter(Boolean);
+      
+      res.json({
+        prerequisites: validPrerequisites,
+        dependents: validDependents
+      });
+    } catch (error) {
+      console.error("Error fetching task dependencies:", error);
+      res.status(500).json({ 
+        message: "Failed to fetch task dependencies", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Add task dependency
+  app.post("/api/tasks/:id/dependencies", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const taskId = req.params.id;
+      const { prerequisiteId } = req.body; // ID of the task that this task depends on
+      
+      if (!prerequisiteId) {
+        return res.status(400).json({ message: "Prerequisite task ID is required" });
+      }
+      
+      // Check if the task exists
+      const task = await storage.getTask(taskId);
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
+      // Check if the prerequisite task exists
+      const prerequisiteTask = await storage.getTask(prerequisiteId);
+      if (!prerequisiteTask) {
+        return res.status(404).json({ message: "Prerequisite task not found" });
+      }
+      
+      // Verify both tasks' boards belong to the user
+      const board = await storage.getBoard(String(task.boardId));
+      const prerequisiteBoard = await storage.getBoard(String(prerequisiteTask.boardId));
+      
+      if (!board || board.userId !== (req.user as any).id) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      if (!prerequisiteBoard || prerequisiteBoard.userId !== (req.user as any).id) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      // Cannot add dependency to itself
+      if (taskId === prerequisiteId) {
+        return res.status(400).json({ message: "Task cannot depend on itself" });
+      }
+      
+      // Update this task's prerequisite list
+      const currentPrereqs = task.prerequisiteTaskIds || [];
+      if (!currentPrereqs.includes(prerequisiteId)) {
+        const updatedTask = await storage.updateTask(taskId, {
+          prerequisiteTaskIds: [...currentPrereqs, prerequisiteId]
+        });
+        
+        // Update the prerequisite task's dependent list
+        const currentDependents = prerequisiteTask.dependentTaskIds || [];
+        if (!currentDependents.includes(taskId)) {
+          await storage.updateTask(prerequisiteId, {
+            dependentTaskIds: [...currentDependents, taskId]
+          });
+        }
+        
+        res.json(updatedTask);
+      } else {
+        // Dependency already exists
+        res.json(task);
+      }
+    } catch (error) {
+      console.error("Error adding task dependency:", error);
+      res.status(500).json({ 
+        message: "Failed to add task dependency", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Remove task dependency
+  app.delete("/api/tasks/:id/dependencies/:prerequisiteId", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const taskId = req.params.id;
+      const { prerequisiteId } = req.params;
+      
+      // Check if the task exists
+      const task = await storage.getTask(taskId);
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
+      // Check if the prerequisite task exists
+      const prerequisiteTask = await storage.getTask(prerequisiteId);
+      if (!prerequisiteTask) {
+        return res.status(404).json({ message: "Prerequisite task not found" });
+      }
+      
+      // Verify tasks' boards belong to user
+      const board = await storage.getBoard(String(task.boardId));
+      
+      if (!board || board.userId !== (req.user as any).id) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      // Remove prerequisiteId from task's prerequisiteTaskIds
+      if (task.prerequisiteTaskIds && task.prerequisiteTaskIds.includes(prerequisiteId)) {
+        const updatedPrereqs = task.prerequisiteTaskIds.filter(id => id !== prerequisiteId);
+        await storage.updateTask(taskId, {
+          prerequisiteTaskIds: updatedPrereqs
+        });
+      }
+      
+      // Remove taskId from prerequisiteTask's dependentTaskIds
+      if (prerequisiteTask.dependentTaskIds && prerequisiteTask.dependentTaskIds.includes(taskId)) {
+        const updatedDependents = prerequisiteTask.dependentTaskIds.filter(id => id !== taskId);
+        await storage.updateTask(prerequisiteId, {
+          dependentTaskIds: updatedDependents
+        });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error removing task dependency:", error);
+      res.status(500).json({ 
+        message: "Failed to remove task dependency", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+  
+  // Get task dependency graph for a board
+  app.get("/api/boards/:id/dependency-graph", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const boardId = req.params.id;
+      
+      // Verify board belongs to user
+      const board = await storage.getBoard(boardId);
+      
+      if (!board) {
+        return res.status(404).json({ message: "Board not found" });
+      }
+      
+      if (board.userId !== (req.user as any).id) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      // Get all tasks for the board
+      const tasks = await storage.getTasksByBoardId(boardId);
+      
+      // Create a graph structure
+      const graph = {
+        nodes: tasks.map(task => ({
+          id: String(task.id),
+          label: task.title,
+          status: task.status,
+          priority: task.priority,
+          dueDate: task.dueDate,
+          assignee: task.assignee,
+        })),
+        links: []
+      };
+      
+      // Add link for each dependency
+      for (const task of tasks) {
+        if (task.prerequisiteTaskIds && task.prerequisiteTaskIds.length > 0) {
+          for (const prerequisiteId of task.prerequisiteTaskIds) {
+            // Check if the prerequisite task exists in this board
+            if (tasks.some(t => String(t.id) === prerequisiteId)) {
+              graph.links.push({
+                source: prerequisiteId,
+                target: String(task.id),
+                type: "dependency"
+              });
+            }
+          }
+        }
+      }
+      
+      res.json(graph);
+    } catch (error) {
+      console.error("Error generating dependency graph:", error);
+      res.status(500).json({ 
+        message: "Failed to generate dependency graph", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
 }

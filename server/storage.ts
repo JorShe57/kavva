@@ -8,7 +8,7 @@ import {
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
 import { DbValidator } from "./middleware/db-validator";
-import { NotFoundError } from "./middleware/error-handler";
+import { NotFoundError, DatabaseError } from "./middleware/error-handler";
 import { logger } from "./middleware/logger";
 
 export interface IStorage {
@@ -33,66 +33,221 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   // User methods
   async getUser(id: number): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.id, id));
-    return result[0];
+    const storageLogger = logger.child('storage');
+    
+    try {
+      if (!id || typeof id !== 'number') {
+        storageLogger.warn(`Invalid user ID: ${id}`);
+        return undefined;
+      }
+      
+      storageLogger.info(`Fetching user with ID: ${id}`);
+      const result = await db.select().from(users).where(eq(users.id, id));
+      
+      if (result.length === 0) {
+        storageLogger.info(`User not found with ID: ${id}`);
+        return undefined;
+      }
+      
+      return result[0];
+    } catch (error) {
+      storageLogger.error(`Error fetching user: ${error instanceof Error ? error.message : String(error)}`);
+      throw new DatabaseError(`Error fetching user: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.username, username));
-    return result[0];
+    const storageLogger = logger.child('storage');
+    
+    try {
+      if (!username || typeof username !== 'string') {
+        storageLogger.warn(`Invalid username: ${username}`);
+        return undefined;
+      }
+      
+      storageLogger.info(`Fetching user with username: ${username}`);
+      const result = await db.select().from(users).where(eq(users.username, username));
+      
+      if (result.length === 0) {
+        storageLogger.info(`User not found with username: ${username}`);
+        return undefined;
+      }
+      
+      return result[0];
+    } catch (error) {
+      storageLogger.error(`Error fetching user by username: ${error instanceof Error ? error.message : String(error)}`);
+      throw new DatabaseError(`Error fetching user: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.email, email));
-    return result[0];
+    const storageLogger = logger.child('storage');
+    
+    try {
+      if (!email || typeof email !== 'string') {
+        storageLogger.warn(`Invalid email: ${email}`);
+        return undefined;
+      }
+      
+      storageLogger.info(`Fetching user with email: ${email}`);
+      const result = await db.select().from(users).where(eq(users.email, email));
+      
+      if (result.length === 0) {
+        storageLogger.info(`User not found with email: ${email}`);
+        return undefined;
+      }
+      
+      return result[0];
+    } catch (error) {
+      storageLogger.error(`Error fetching user by email: ${error instanceof Error ? error.message : String(error)}`);
+      throw new DatabaseError(`Error fetching user: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const result = await db.insert(users).values(insertUser).returning();
-    return result[0];
+    const storageLogger = logger.child('storage');
+    
+    return DbValidator.createRecord(
+      insertUserSchema,
+      insertUser,
+      async (validData: InsertUser) => {
+        storageLogger.info(`Creating user: ${validData.username}`);
+        const result = await db.insert(users).values(validData).returning();
+        
+        if (!result.length) {
+          throw new Error('Failed to create user');
+        }
+        
+        storageLogger.info(`User created with ID: ${result[0].id}`);
+        return result[0];
+      }
+    );
   }
   
   // Task board methods
   async getBoard(id: string): Promise<TaskBoard | undefined> {
-    // Safely convert id to number, otherwise return undefined
-    const boardId = Number(id);
-    if (isNaN(boardId)) {
-      return undefined;
-    }
+    const storageLogger = logger.child('storage');
     
-    const result = await db.select().from(taskBoards).where(eq(taskBoards.id, boardId));
-    return result[0];
+    try {
+      // Safely convert id to number, otherwise return undefined
+      const boardId = Number(id);
+      if (isNaN(boardId)) {
+        storageLogger.warn(`Invalid board ID format: ${id}`);
+        return undefined;
+      }
+      
+      storageLogger.info(`Fetching board with ID: ${boardId}`);
+      const result = await db.select().from(taskBoards).where(eq(taskBoards.id, boardId));
+      
+      if (result.length === 0) {
+        storageLogger.info(`Board not found with ID: ${boardId}`);
+        return undefined;
+      }
+      
+      return result[0];
+    } catch (error) {
+      storageLogger.error(`Error fetching board: ${error instanceof Error ? error.message : String(error)}`);
+      throw new DatabaseError(`Error fetching board: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
   
   async getBoardsByUserId(userId: number): Promise<TaskBoard[]> {
-    return db.select().from(taskBoards).where(eq(taskBoards.userId, userId));
+    const storageLogger = logger.child('storage');
+    
+    try {
+      // Check if user exists
+      const user = await this.getUser(userId);
+      if (!user) {
+        storageLogger.warn(`User not found with ID: ${userId}`);
+        return [];
+      }
+      
+      storageLogger.info(`Fetching boards for user: ${userId}`);
+      return db.select().from(taskBoards).where(eq(taskBoards.userId, userId));
+    } catch (error) {
+      storageLogger.error(`Error fetching boards: ${error instanceof Error ? error.message : String(error)}`);
+      throw new DatabaseError(`Error fetching boards: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
   
   async createBoard(board: InsertTaskBoard): Promise<TaskBoard> {
-    const result = await db.insert(taskBoards).values(board).returning();
-    return result[0];
+    const storageLogger = logger.child('storage');
+    
+    return DbValidator.createRecord(
+      insertTaskBoardSchema,
+      board,
+      async (validData: InsertTaskBoard) => {
+        storageLogger.info(`Creating board: ${validData.title} for user: ${validData.userId}`);
+        
+        // Validate that user exists
+        const userExists = await this.getUser(validData.userId);
+        if (!userExists) {
+          throw new NotFoundError("User");
+        }
+        
+        const result = await db.insert(taskBoards).values(validData).returning();
+        
+        if (!result.length) {
+          throw new Error('Failed to create board');
+        }
+        
+        storageLogger.info(`Board created with ID: ${result[0].id}`);
+        return result[0];
+      }
+    );
   }
   
   // Task methods
   async getTask(id: string): Promise<Task | undefined> {
-    // Safely convert id to number, otherwise return undefined
-    const taskId = Number(id);
-    if (isNaN(taskId)) {
-      return undefined;
-    }
+    const storageLogger = logger.child('storage');
     
-    const result = await db.select().from(tasks).where(eq(tasks.id, taskId));
-    return result[0];
+    try {
+      // Safely convert id to number, otherwise return undefined
+      const taskId = Number(id);
+      if (isNaN(taskId)) {
+        storageLogger.warn(`Invalid task ID format: ${id}`);
+        return undefined;
+      }
+      
+      storageLogger.info(`Fetching task with ID: ${taskId}`);
+      const result = await db.select().from(tasks).where(eq(tasks.id, taskId));
+      
+      if (result.length === 0) {
+        storageLogger.info(`Task not found with ID: ${taskId}`);
+        return undefined;
+      }
+      
+      return result[0];
+    } catch (error) {
+      storageLogger.error(`Error fetching task: ${error instanceof Error ? error.message : String(error)}`);
+      throw new DatabaseError(`Error fetching task: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
   
   async getTasksByBoardId(boardId: string): Promise<Task[]> {
-    // Safely convert id to number, otherwise return empty array
-    const parsedBoardId = Number(boardId);
-    if (isNaN(parsedBoardId)) {
-      return [];
-    }
+    const storageLogger = logger.child('storage');
     
-    return db.select().from(tasks).where(eq(tasks.boardId, parsedBoardId));
+    try {
+      // Safely convert id to number, otherwise return empty array
+      const parsedBoardId = Number(boardId);
+      if (isNaN(parsedBoardId)) {
+        storageLogger.warn(`Invalid board ID format: ${boardId}`);
+        return [];
+      }
+      
+      // Check if board exists
+      const board = await this.getBoard(boardId);
+      if (!board) {
+        storageLogger.warn(`Board not found with ID: ${boardId}`);
+        return [];
+      }
+      
+      storageLogger.info(`Fetching tasks for board: ${parsedBoardId}`);
+      return db.select().from(tasks).where(eq(tasks.boardId, parsedBoardId));
+    } catch (error) {
+      storageLogger.error(`Error fetching tasks for board: ${error instanceof Error ? error.message : String(error)}`);
+      throw new DatabaseError(`Error fetching tasks: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
   
   async createTask(task: InsertTask): Promise<Task> {
