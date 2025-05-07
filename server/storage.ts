@@ -10,6 +10,10 @@ import { eq, and } from "drizzle-orm";
 import { DbValidator } from "./middleware/db-validator";
 import { NotFoundError, DatabaseError } from "./middleware/error-handler";
 import { logger } from "./middleware/logger";
+import { 
+  userCache, boardCache, taskCache, 
+  getOrSetCache, clearCache 
+} from "./services/cacheService";
 
 export interface IStorage {
   // User methods
@@ -43,16 +47,23 @@ export class DatabaseStorage implements IStorage {
       
       storageLogger.info(`Fetching user with ID: ${id}`);
       
-      return await executeDbOperation(async (db) => {
-        const result = await db.select().from(users).where(eq(users.id, id));
-        
-        if (result.length === 0) {
-          storageLogger.info(`User not found with ID: ${id}`);
-          return undefined;
+      // Use cache with database fallback
+      return await getOrSetCache<User | undefined>(
+        userCache,
+        `user:${id}`,
+        async () => {
+          return await executeDbOperation(async (db) => {
+            const result = await db.select().from(users).where(eq(users.id, id));
+            
+            if (result.length === 0) {
+              storageLogger.info(`User not found with ID: ${id}`);
+              return undefined;
+            }
+            
+            return result[0];
+          });
         }
-        
-        return result[0];
-      });
+      );
     } catch (error) {
       storageLogger.error(`Error fetching user: ${error instanceof Error ? error.message : String(error)}`);
       throw new DatabaseError(`Error fetching user: ${error instanceof Error ? error.message : String(error)}`);
@@ -69,14 +80,24 @@ export class DatabaseStorage implements IStorage {
       }
       
       storageLogger.info(`Fetching user with username: ${username}`);
-      const result = await db.select().from(users).where(eq(users.username, username));
       
-      if (result.length === 0) {
-        storageLogger.info(`User not found with username: ${username}`);
-        return undefined;
-      }
-      
-      return result[0];
+      // Use cache with database fallback
+      return await getOrSetCache<User | undefined>(
+        userCache,
+        `user:username:${username}`,
+        async () => {
+          return await executeDbOperation(async (db) => {
+            const result = await db.select().from(users).where(eq(users.username, username));
+            
+            if (result.length === 0) {
+              storageLogger.info(`User not found with username: ${username}`);
+              return undefined;
+            }
+            
+            return result[0];
+          });
+        }
+      );
     } catch (error) {
       storageLogger.error(`Error fetching user by username: ${error instanceof Error ? error.message : String(error)}`);
       throw new DatabaseError(`Error fetching user: ${error instanceof Error ? error.message : String(error)}`);
@@ -93,14 +114,24 @@ export class DatabaseStorage implements IStorage {
       }
       
       storageLogger.info(`Fetching user with email: ${email}`);
-      const result = await db.select().from(users).where(eq(users.email, email));
       
-      if (result.length === 0) {
-        storageLogger.info(`User not found with email: ${email}`);
-        return undefined;
-      }
-      
-      return result[0];
+      // Use cache with database fallback
+      return await getOrSetCache<User | undefined>(
+        userCache,
+        `user:email:${email}`,
+        async () => {
+          return await executeDbOperation(async (db) => {
+            const result = await db.select().from(users).where(eq(users.email, email));
+            
+            if (result.length === 0) {
+              storageLogger.info(`User not found with email: ${email}`);
+              return undefined;
+            }
+            
+            return result[0];
+          });
+        }
+      );
     } catch (error) {
       storageLogger.error(`Error fetching user by email: ${error instanceof Error ? error.message : String(error)}`);
       throw new DatabaseError(`Error fetching user: ${error instanceof Error ? error.message : String(error)}`);
@@ -115,11 +146,27 @@ export class DatabaseStorage implements IStorage {
       insertUser,
       async (validData: InsertUser) => {
         storageLogger.info(`Creating user: ${validData.username}`);
-        const result = await db.insert(users).values(validData).returning();
         
-        if (!result.length) {
-          throw new Error('Failed to create user');
-        }
+        const result = await executeDbOperation(async (db) => {
+          const inserted = await db.insert(users).values(validData).returning();
+          
+          if (!inserted.length) {
+            throw new Error('Failed to create user');
+          }
+          
+          // Clear any cached versions of this user
+          if (inserted[0].id) {
+            clearCache(userCache, `user:${inserted[0].id}`);
+          }
+          if (inserted[0].username) {
+            clearCache(userCache, `user:username:${inserted[0].username}`);
+          }
+          if (inserted[0].email) {
+            clearCache(userCache, `user:email:${inserted[0].email}`);
+          }
+          
+          return inserted;
+        });
         
         storageLogger.info(`User created with ID: ${result[0].id}`);
         return result[0];
@@ -140,14 +187,24 @@ export class DatabaseStorage implements IStorage {
       }
       
       storageLogger.info(`Fetching board with ID: ${boardId}`);
-      const result = await db.select().from(taskBoards).where(eq(taskBoards.id, boardId));
       
-      if (result.length === 0) {
-        storageLogger.info(`Board not found with ID: ${boardId}`);
-        return undefined;
-      }
-      
-      return result[0];
+      // Use cache with database fallback
+      return await getOrSetCache<TaskBoard | undefined>(
+        boardCache,
+        `board:${boardId}`,
+        async () => {
+          return await executeDbOperation(async (db) => {
+            const result = await db.select().from(taskBoards).where(eq(taskBoards.id, boardId));
+            
+            if (result.length === 0) {
+              storageLogger.info(`Board not found with ID: ${boardId}`);
+              return undefined;
+            }
+            
+            return result[0];
+          });
+        }
+      );
     } catch (error) {
       storageLogger.error(`Error fetching board: ${error instanceof Error ? error.message : String(error)}`);
       throw new DatabaseError(`Error fetching board: ${error instanceof Error ? error.message : String(error)}`);
@@ -166,7 +223,17 @@ export class DatabaseStorage implements IStorage {
       }
       
       storageLogger.info(`Fetching boards for user: ${userId}`);
-      return db.select().from(taskBoards).where(eq(taskBoards.userId, userId));
+      
+      // Use cache with database fallback
+      return await getOrSetCache<TaskBoard[]>(
+        boardCache,
+        `boards:user:${userId}`,
+        async () => {
+          return await executeDbOperation(async (db) => {
+            return await db.select().from(taskBoards).where(eq(taskBoards.userId, userId));
+          });
+        }
+      );
     } catch (error) {
       storageLogger.error(`Error fetching boards: ${error instanceof Error ? error.message : String(error)}`);
       throw new DatabaseError(`Error fetching boards: ${error instanceof Error ? error.message : String(error)}`);
@@ -188,11 +255,18 @@ export class DatabaseStorage implements IStorage {
           throw new NotFoundError("User");
         }
         
-        const result = await db.insert(taskBoards).values(validData).returning();
+        const result = await executeDbOperation(async (db) => {
+          const inserted = await db.insert(taskBoards).values(validData).returning();
+          
+          if (!inserted.length) {
+            throw new Error('Failed to create board');
+          }
+          
+          return inserted;
+        });
         
-        if (!result.length) {
-          throw new Error('Failed to create board');
-        }
+        // Invalidate cache for boards list
+        clearCache(boardCache, `boards:user:${validData.userId}`);
         
         storageLogger.info(`Board created with ID: ${result[0].id}`);
         return result[0];
@@ -213,14 +287,24 @@ export class DatabaseStorage implements IStorage {
       }
       
       storageLogger.info(`Fetching task with ID: ${taskId}`);
-      const result = await db.select().from(tasks).where(eq(tasks.id, taskId));
       
-      if (result.length === 0) {
-        storageLogger.info(`Task not found with ID: ${taskId}`);
-        return undefined;
-      }
-      
-      return result[0];
+      // Use cache with database fallback
+      return await getOrSetCache<Task | undefined>(
+        taskCache,
+        `task:${taskId}`,
+        async () => {
+          return await executeDbOperation(async (db) => {
+            const result = await db.select().from(tasks).where(eq(tasks.id, taskId));
+            
+            if (result.length === 0) {
+              storageLogger.info(`Task not found with ID: ${taskId}`);
+              return undefined;
+            }
+            
+            return result[0];
+          });
+        }
+      );
     } catch (error) {
       storageLogger.error(`Error fetching task: ${error instanceof Error ? error.message : String(error)}`);
       throw new DatabaseError(`Error fetching task: ${error instanceof Error ? error.message : String(error)}`);
@@ -246,7 +330,17 @@ export class DatabaseStorage implements IStorage {
       }
       
       storageLogger.info(`Fetching tasks for board: ${parsedBoardId}`);
-      return db.select().from(tasks).where(eq(tasks.boardId, parsedBoardId));
+      
+      // Use cache with database fallback
+      return await getOrSetCache<Task[]>(
+        taskCache,
+        `tasks:board:${parsedBoardId}`,
+        async () => {
+          return await executeDbOperation(async (db) => {
+            return await db.select().from(tasks).where(eq(tasks.boardId, parsedBoardId));
+          });
+        }
+      );
     } catch (error) {
       storageLogger.error(`Error fetching tasks for board: ${error instanceof Error ? error.message : String(error)}`);
       throw new DatabaseError(`Error fetching tasks: ${error instanceof Error ? error.message : String(error)}`);
