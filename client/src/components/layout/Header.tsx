@@ -1,12 +1,20 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { Medal, Bell, HelpCircle, User, LogOut, Menu } from "lucide-react";
 
 interface HeaderProps {
   onMenuClick: () => void;
 }
 
 export default function Header({ onMenuClick }: HeaderProps) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
   
@@ -18,9 +26,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
           className="md:hidden text-muted-foreground"
           onClick={onMenuClick}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
+          <Menu className="h-6 w-6" />
         </button>
         
         {/* Search */}
@@ -42,32 +48,53 @@ export default function Header({ onMenuClick }: HeaderProps) {
         
         {/* Right side controls */}
         <div className="flex items-center space-x-4">
+          {/* Notifications */}
           <button 
             className="text-muted-foreground hover:text-foreground relative"
             onClick={() => setShowNotifications(!showNotifications)}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-            </svg>
+            <Bell className="h-6 w-6" />
             <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-destructive"></span>
           </button>
           
+          {/* Help */}
           <button 
             className="text-muted-foreground hover:text-foreground"
             onClick={() => setShowHelpModal(!showHelpModal)}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-              <line x1="12" y1="17" x2="12.01" y2="17" />
-            </svg>
+            <HelpCircle className="h-6 w-6" />
           </button>
           
+          {/* User menu */}
           <div className="hidden md:block">
-            <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-medium text-sm">
-              {user?.username?.charAt(0).toUpperCase() || "U"}
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="focus:outline-none">
+                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-medium text-sm cursor-pointer hover:opacity-90 transition-opacity">
+                  {user?.username?.charAt(0).toUpperCase() || "U"}
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem asChild>
+                  <Link href="/profile" className="flex items-center cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/profile" className="flex items-center cursor-pointer">
+                    <Medal className="mr-2 h-4 w-4" />
+                    <span>Achievements</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="text-destructive focus:text-destructive cursor-pointer"
+                  onClick={() => logout()}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

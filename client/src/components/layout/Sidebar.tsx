@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
+import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { TaskBoard } from "@shared/schema";
 import { cn } from "@/lib/utils";
+import { LayoutDashboard, Award, Activity, Link2, LogOut, Trophy } from "lucide-react";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -20,6 +22,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const { user, logout } = useAuth();
   const [isMobile, setIsMobile] = useState(false);
+  const [location] = useLocation();
 
   useEffect(() => {
     const checkIsMobile = () => {
@@ -83,49 +86,46 @@ export default function Sidebar({
           <div className="py-4 flex-1 overflow-y-auto">
             <ul>
               <li>
-                <a href="#" className={cn(
+                <Link href="/" className={cn(
                   "flex items-center space-x-3 px-4 py-3",
                   "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                  activeBoard === null ? "bg-sidebar-accent text-sidebar-accent-foreground border-r-4 border-sidebar-primary" : ""
+                  (location === "/" && activeBoard === null) ? "bg-sidebar-accent text-sidebar-accent-foreground border-r-4 border-sidebar-primary" : ""
                 )}>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="7" height="7" />
-                    <rect x="14" y="3" width="7" height="7" />
-                    <rect x="14" y="14" width="7" height="7" />
-                    <rect x="3" y="14" width="7" height="7" />
-                  </svg>
+                  <LayoutDashboard className="w-5 h-5" />
                   <span>Dashboard</span>
-                </a>
+                </Link>
               </li>
               
               <li>
-                <a href="#" className="flex items-center space-x-3 px-4 py-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5l6.74-6.76zM18 6l-1-1 M7 2L5 4 M2 7l2 2 M2 21h12" />
-                  </svg>
-                  <span>Task Boards</span>
-                </a>
+                <Link 
+                  href="/profile" 
+                  className={cn(
+                    "flex items-center space-x-3 px-4 py-3",
+                    "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    location === "/profile" ? "bg-sidebar-accent text-sidebar-accent-foreground border-r-4 border-sidebar-primary" : ""
+                  )}
+                >
+                  <Award className="w-5 h-5" />
+                  <span>Achievements</span>
+                </Link>
               </li>
               
               <li>
-                <a href="#" className="flex items-center space-x-3 px-4 py-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                  </svg>
+                <a href="#" className={cn(
+                  "flex items-center space-x-3 px-4 py-3", 
+                  "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                )}>
+                  <Activity className="w-5 h-5" />
                   <span>Analytics</span>
                 </a>
               </li>
               
               <li>
-                <a href="#" className="flex items-center space-x-3 px-4 py-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 11V6a2 2 0 0 1 2-2v0a2 2 0 0 1 2 2v0" />
-                    <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2" />
-                    <line x1="12" y1="19" x2="12" y2="22" />
-                    <line x1="8" y1="22" x2="16" y2="22" />
-                    <line x1="2" y1="16" x2="22" y2="16" />
-                    <path d="M18 8c0 4.5-6 8-6 8s-6-3.5-6-8a6 6 0 0 1 12 0Z" />
-                  </svg>
+                <a href="#" className={cn(
+                  "flex items-center space-x-3 px-4 py-3", 
+                  "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                )}>
+                  <Link2 className="w-5 h-5" />
                   <span>Integrations</span>
                 </a>
               </li>

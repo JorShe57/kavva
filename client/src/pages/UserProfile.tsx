@@ -72,7 +72,7 @@ export default function UserProfile() {
     data: newAchievements, 
     isLoading: newAchievementsLoading 
   } = useQuery<AchievementData[]>({
-    queryKey: ['/api/gamification/achievements/new'],
+    queryKey: ['/api/gamification/new-achievements'],
     enabled: !!user,
     refetchOnWindowFocus: false,
   });
@@ -87,7 +87,7 @@ export default function UserProfile() {
       // Mark as displayed
       const markDisplayed = async () => {
         try {
-          await fetch('/api/gamification/achievements/displayed', {
+          await fetch('/api/gamification/mark-viewed', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -98,7 +98,7 @@ export default function UserProfile() {
           });
           
           // Invalidate queries
-          queryClient.invalidateQueries({ queryKey: ['/api/gamification/achievements/new'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/gamification/new-achievements'] });
         } catch (error) {
           console.error('Failed to mark achievement as displayed:', error);
         }
