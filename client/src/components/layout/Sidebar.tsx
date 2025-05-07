@@ -149,15 +149,14 @@ export default function Sidebar({
                 const boardIdString = String(board.id);
                 return (
                   <li key={boardIdString}>
-                    <a 
-                      href="#" 
+                    <Link 
+                      href={`/board/${boardIdString}`}
                       className={cn(
                         "flex items-center space-x-3 px-4 py-2 text-sm",
                         "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                         activeBoard === boardIdString ? "bg-sidebar-accent text-sidebar-accent-foreground border-r-4 border-sidebar-primary" : "text-sidebar-foreground"
                       )}
-                      onClick={(e) => {
-                        e.preventDefault();
+                      onClick={() => {
                         onBoardSelect(boardIdString);
                         if (isMobile) onClose();
                       }}
@@ -167,7 +166,7 @@ export default function Sidebar({
                         <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
                       </svg>
                       <span>{board.title}</span>
-                    </a>
+                    </Link>
                   </li>
                 );
               })}
