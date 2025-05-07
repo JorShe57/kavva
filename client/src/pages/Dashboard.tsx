@@ -161,6 +161,18 @@ export default function Dashboard() {
 
   const handleAddTasksToBoard = async (tasks: Task[]) => {
     try {
+      // Clean up tasks - remove temporary IDs and extract only necessary properties
+      const cleanedTasks = tasks.map(task => ({
+        title: task.title,
+        description: task.description || "",
+        dueDate: task.dueDate,
+        assignee: task.assignee,
+        priority: task.priority,
+        status: task.status,
+      }));
+      
+      console.log('Sending tasks to server:', cleanedTasks);
+      
       // Use fetch directly to avoid Response type issues
       const response = await fetch('/api/tasks/batch', {
         method: 'POST',
@@ -168,7 +180,7 @@ export default function Dashboard() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          tasks: tasks,
+          tasks: cleanedTasks,
           boardId: activeBoard
         }),
         credentials: 'include'
