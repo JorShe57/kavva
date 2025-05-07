@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { setupAuthRoutes } from "./auth";
 import { setupTaskRoutes } from "./tasks";
 import { setupGamificationRoutes } from "./gamification-routes";
+import { setupEmailRoutes } from "./email-receiver";
 import { processEmailWithAI } from "./openai";
 import { initializeAchievementBadges } from "./gamification";
 import migrate from "./db-migrate";
@@ -37,6 +38,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Set up gamification routes
   setupGamificationRoutes(app);
+  
+  // Set up email receiver routes
+  setupEmailRoutes(app);
   
   // Run database migrations and initialize achievement badges
   try {
