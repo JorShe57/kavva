@@ -17,9 +17,7 @@ export function setupAuthRoutes(app: Express) {
         
         // Check if password is correct
         // For a real app, you would compare hashed passwords here
-        const bcrypt = require('bcryptjs');
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
+        if (password !== user.password) {
           return done(null, false, { message: "Invalid password" });
         }
         
@@ -53,16 +51,6 @@ export function setupAuthRoutes(app: Express) {
       if (!username || !password || !email) {
         return res.status(400).json({ message: "Username, email and password are required" });
       }
-
-      // Password validation
-      if (password.length < 8) {
-        return res.status(400).json({ message: "Password must be at least 8 characters long" });
-      }
-      
-      // Hash password
-      const bcrypt = require('bcryptjs');
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, salt);
       
       // Check if email already exists
       const existingEmail = await storage.getUserByEmail(email);
