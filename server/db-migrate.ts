@@ -70,11 +70,17 @@ async function migrate() {
   }
 }
 
-// ES modules don't have require.main, so we'll just export the migrate function
+// Just export the migrate function
 export { migrate };
 
-// Only execute when run directly (not when imported)
-if (import.meta.url === import.meta.main) {
+// We can't check if this is the main module in ES modules easily,
+// so we'll just make sure to call migrate() where needed
+// in the routes.ts file
+
+/*
+// For direct execution from command line
+// This would be useful in a CommonJS environment
+if (require.main === module) {
   migrate()
     .then(() => {
       console.log("Migration successful, exiting...");
@@ -85,5 +91,6 @@ if (import.meta.url === import.meta.main) {
       process.exit(1);
     });
 }
+*/
 
 export default migrate;

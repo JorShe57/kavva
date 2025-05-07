@@ -136,55 +136,66 @@ export default function Sidebar({
             </div>
             
             <ul>
-              {boards.map((board) => (
-                <li key={board.id}>
-                  <a 
-                    href="#" 
-                    className={cn(
-                      "flex items-center space-x-3 px-4 py-2 text-sm",
-                      "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                      activeBoard === board.id ? "bg-sidebar-accent text-sidebar-accent-foreground border-r-4 border-sidebar-primary" : "text-sidebar-foreground"
-                    )}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      onBoardSelect(board.id);
-                      if (isMobile) onClose();
-                    }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="9 11 12 14 22 4"></polyline>
-                      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-                    </svg>
-                    <span>{board.title}</span>
-                  </a>
-                </li>
-              ))}
+              {boards.map((board) => {
+                // Convert board.id to string for comparison
+                const boardIdString = String(board.id);
+                return (
+                  <li key={boardIdString}>
+                    <a 
+                      href="#" 
+                      className={cn(
+                        "flex items-center space-x-3 px-4 py-2 text-sm",
+                        "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                        activeBoard === boardIdString ? "bg-sidebar-accent text-sidebar-accent-foreground border-r-4 border-sidebar-primary" : "text-sidebar-foreground"
+                      )}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onBoardSelect(boardIdString);
+                        if (isMobile) onClose();
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="9 11 12 14 22 4"></polyline>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                      </svg>
+                      <span>{board.title}</span>
+                    </a>
+                  </li>
+                );
+              })}
             </ul>
           </div>
           
           {/* User Profile */}
           <div className="border-t border-sidebar-border p-4">
-            <div className="flex items-center space-x-3">
+            <Link 
+              href="/profile"
+              className="flex items-center space-x-3 p-2 rounded-lg transition-colors hover:bg-sidebar-accent"
+              onClick={isMobile ? onClose : undefined}
+            >
               <div className="w-10 h-10 rounded-full bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground">
                 {user?.username?.charAt(0).toUpperCase() || "U"}
               </div>
               
               <div className="flex-1">
                 <h3 className="text-sm font-medium">{user?.username || "User"}</h3>
-                <p className="text-xs text-sidebar-foreground/70">{user?.username || "user"}@example.com</p>
+                <div className="flex items-center text-xs text-sidebar-foreground/70">
+                  <Trophy className="h-3 w-3 mr-1" /> 
+                  <span>View achievements</span>
+                </div>
               </div>
               
               <button 
-                className="text-sidebar-foreground/70 hover:text-sidebar-foreground"
-                onClick={logout}
+                className="text-sidebar-foreground/70 hover:text-sidebar-foreground p-1"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  logout();
+                }}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                  <polyline points="16 17 21 12 16 7"></polyline>
-                  <line x1="21" y1="12" x2="9" y2="12"></line>
-                </svg>
+                <LogOut className="h-4 w-4" />
               </button>
-            </div>
+            </Link>
           </div>
         </div>
       </div>
