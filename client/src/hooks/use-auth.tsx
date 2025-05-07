@@ -25,9 +25,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [, navigate] = useLocation();
 
+  // Debounce function
+  const debounce = (func: any, wait: number) => {
+    let timeout: NodeJS.Timeout;
+    return (...args: any[]) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        func.apply(this, args);
+      }, wait);
+    };
+  };
+
   useEffect(() => {
-    // Check if user is logged in
-    const checkAuthStatus = async () => {
+    // Check if user is logged in - Debounced
+    const debouncedCheckAuthStatus = debounce(async () => {
       try {
         const res = await fetch("/api/auth/me", {
           credentials: "include",
@@ -42,9 +53,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } finally {
         setLoading(false);
       }
-    };
+    }, 1000);
 
-    checkAuthStatus();
+    debouncedCheckAuthStatus();
   }, []);
 
   const login = async (username: string, password: string) => {
