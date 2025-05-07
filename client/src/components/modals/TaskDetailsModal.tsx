@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Task } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,19 @@ interface TaskDetailsModalProps {
   onClose: () => void;
   onSave: (updatedTask: Task) => void;
 }
+
+
+  // Fetch recommendations
+  const { data: recommendations, isLoading: loadingRecommendations } = useQuery({
+    queryKey: ['taskRecommendations', task?.id],
+    queryFn: async () => {
+      if (!task?.id) return null;
+      const response = await fetch(`/api/tasks/${task.id}/recommendations`);
+      if (!response.ok) throw new Error('Failed to fetch recommendations');
+      return response.json();
+    },
+    enabled: !!task?.id
+  });
 
 export default function TaskDetailsModal({ task, onClose, onSave }: TaskDetailsModalProps) {
   const { toast } = useToast();
@@ -133,6 +147,37 @@ export default function TaskDetailsModal({ task, onClose, onSave }: TaskDetailsM
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
+
+          {/* AI Recommendations */}
+          <div className="mt-6 space-y-4">
+            <h3 className="text-lg font-semibold">AI Recommendations</h3>
+            {loadingRecommendations ? (
+              <div className="animate-pulse space-y-2">
+                <div className="h-4 bg-muted rounded w-3/4"></div>
+                <div className="h-4 bg-muted rounded w-1/2"></div>
+              </div>
+            ) : recommendations ? (
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium mb-2">Quick Tips:</h4>
+                  <ul className="list-disc list-inside space-y-1">
+                    {recommendations.recommendations.map((rec: string, i: number) => (
+                      <li key={i} className="text-sm text-muted-foreground">{rec}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-medium mb-2">Step-by-Step Guide:</h4>
+                  <ol className="list-decimal list-inside space-y-1">
+                    {recommendations.steps.map((step: string, i: number) => (
+                      <li key={i} className="text-sm text-muted-foreground">{step}</li>
+                    ))}
+                  </ol>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
           <DialogTitle>Task Details</DialogTitle>
           <DialogDescription>
             View and edit task details

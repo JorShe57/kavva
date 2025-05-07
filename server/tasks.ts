@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { storage } from "./storage";
-import { processEmailWithAI, summarizeTasksWithAI } from "./openai";
+import { processEmailWithAI, summarizeTasksWithAI, getTaskRecommendations } from "./openai";
 import { insertTaskSchema } from "@shared/schema";
 import { TaskOutput } from "./openai";
 
@@ -447,6 +447,47 @@ export function setupTaskRoutes(app: Express) {
       const prerequisiteTask = await storage.getTask(prerequisiteId);
       if (!prerequisiteTask) {
         return res.status(404).json({ message: "Prerequisite task not found" });
+
+  // Get AI recommendations for a task
+  app.get("/api/tasks/:id/recommendations", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const taskId = req.params.id;
+      const task = await storage.getTask(taskId);
+
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+
+      // Verify task's board belongs to user
+      const board = await storage.getBoard(String(task.boardId));
+      if (!board || board.userId !== (req.user as any).id) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const recommendations = await getTaskRecommendations({
+        id: String(task.id),
+        title: task.title,
+        description: task.description || "",
+        dueDate: task.dueDate ? task.dueDate.toISOString().split('T')[0] : null,
+        assignee: task.assignee,
+        priority: task.priority,
+        status: task.status
+      });
+
+      res.json(recommendations);
+    } catch (error) {
+      console.error("Error getting task recommendations:", error);
+      res.status(500).json({ 
+        message: "Failed to get recommendations", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+
       }
 
       // Verify tasks' boards belong to user

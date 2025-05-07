@@ -16,6 +16,8 @@ export interface TaskOutput {
   assignee: string | null;
   priority: string;
   status: string;
+  recommendations?: string[];
+  steps?: string[];
 }
 
 // Create a simple in-memory structure for test tasks
@@ -40,6 +42,56 @@ const defaultTestTasks = [
     title: "Review project proposal",
     description: "Review the project proposal document before Thursday's meeting",
     dueDate: "2025-05-29", // Thursday
+
+export async function getTaskRecommendations(task: TaskOutput): Promise<{ recommendations: string[], steps: string[] }> {
+  try {
+    const systemPrompt = `You are an AI assistant that provides practical recommendations and step-by-step guidance for completing tasks.`;
+    
+    const userPrompt = `
+Analyze this task and provide:
+1. 3-5 actionable recommendations for completing it effectively
+2. A detailed step-by-step breakdown of how to complete it
+
+Task:
+Title: ${task.title}
+Description: ${task.description}
+Priority: ${task.priority}
+Due date: ${task.dueDate || 'Not set'}
+
+Return a JSON object with:
+- recommendations: Array of recommendation strings
+- steps: Array of detailed step strings
+`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.7,
+    });
+
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error("Empty response from OpenAI");
+    }
+
+    const result = JSON.parse(content);
+    return {
+      recommendations: result.recommendations || [],
+      steps: result.steps || []
+    };
+  } catch (error) {
+    console.error("Failed to get task recommendations:", error);
+    return {
+      recommendations: ["Break down the task into smaller subtasks", "Set clear milestones", "Track your progress"],
+      steps: ["Plan the approach", "Execute the core requirements", "Review and refine"]
+    };
+  }
+}
+
     assignee: null,
     priority: "medium",
     status: "todo"
