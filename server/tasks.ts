@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { storage } from "./storage";
-import { processEmailWithAI } from "./openai";
+import { processEmailWithAI, summarizeTasksWithAI } from "./openai";
 import { insertTaskSchema } from "@shared/schema";
 
 export function setupTaskRoutes(app: Express) {
@@ -210,6 +210,74 @@ export function setupTaskRoutes(app: Express) {
     } catch (error) {
       console.error("Error processing email:", error);
       res.status(500).json({ message: "Failed to process email", error: String(error) });
+    }
+  });
+  
+  // Summarize tasks with AI
+  app.post("/api/summarize-tasks", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    try {
+      const { boardId } = req.body;
+      
+      if (!boardId) {
+        return res.status(400).json({ message: "Board ID is required" });
+      }
+      
+      // Verify board belongs to user
+      const board = await storage.getBoard(String(boardId));
+      
+      if (!board) {
+        return res.status(404).json({ message: "Board not found" });
+      }
+      
+      if (board.userId !== (req.user as any).id) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      // Get all tasks for the board
+      const tasks = await storage.getTasksByBoardId(String(boardId));
+      
+      if (tasks.length === 0) {
+        return res.json({
+          summary: "No tasks found in this board",
+          insights: [],
+          actionItems: [],
+          overallProgress: 0,
+          taskCount: 0
+        });
+      }
+      
+      console.log(`Generating summary for ${tasks.length} tasks in board ${boardId}...`);
+      
+      // Generate summary with AI
+      // Convert database tasks to TaskOutput format
+      const taskOutputs: TaskOutput[] = tasks.map(task => ({
+        id: String(task.id),
+        title: task.title,
+        description: task.description || "",
+        dueDate: task.dueDate ? task.dueDate.toISOString().split('T')[0] : null,
+        assignee: task.assignee,
+        priority: task.priority,
+        status: task.status
+      }));
+      
+      const summary = await summarizeTasksWithAI(taskOutputs, {
+        username: (req.user as any).username
+      });
+      
+      console.log("Summary generated successfully");
+      
+      // Add task count to the response
+      res.json({
+        ...summary,
+        taskCount: tasks.length
+      });
+    } catch (error) {
+      console.error("Error summarizing tasks:", error);
+      res.status(500).json({ message: "Failed to summarize tasks", error: String(error) });
     }
   });
 }

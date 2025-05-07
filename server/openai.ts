@@ -46,6 +46,104 @@ const defaultTestTasks = [
   }
 ];
 
+interface TaskSummaryOptions {
+  username: string;
+}
+
+/**
+ * Generate a summary of tasks with insights and action items
+ */
+export async function summarizeTasksWithAI(tasks: TaskOutput[], options: TaskSummaryOptions): Promise<{
+  summary: string;
+  insights: string[];
+  actionItems: string[];
+  overallProgress: number;
+}> {
+  try {
+    if (!tasks || tasks.length === 0) {
+      return {
+        summary: "No tasks to summarize",
+        insights: [],
+        actionItems: [],
+        overallProgress: 0
+      };
+    }
+
+    const { username } = options;
+    
+    console.log(`Generating AI summary for ${tasks.length} tasks...`);
+    
+    // Format tasks for the prompt
+    const tasksText = tasks.map((task: TaskOutput, index) => {
+      return `Task ${index + 1}: ${task.title}
+Description: ${task.description}
+Due Date: ${task.dueDate || 'Not set'}
+Assignee: ${task.assignee || 'Unassigned'}
+Priority: ${task.priority}
+Status: ${task.status}
+`;
+    }).join("\n");
+    
+    try {
+      const systemPrompt = `You are an AI assistant that generates insights and summaries for task lists. 
+Be concise and focus on actionable advice.`;
+      
+      const userPrompt = `
+Generate a summary for these tasks for user ${username}:
+
+${tasksText}
+
+Return a JSON object with these properties:
+- summary: A concise 2-3 sentence overview of all tasks
+- insights: An array of 2-4 brief insights about task distribution, priorities, deadlines, etc.
+- actionItems: An array of 2-3 recommended next actions based on the tasks
+- overallProgress: A number between 0-100 representing percent completion (estimate based on task statuses)
+`;
+
+      console.log("Sending summary request to OpenAI API...");
+      
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.3,
+      });
+
+      const content = response.choices[0].message.content;
+      console.log("OpenAI API summary response received");
+      
+      if (!content) {
+        throw new Error("Empty response from OpenAI");
+      }
+      
+      const result = JSON.parse(content);
+      
+      return {
+        summary: result.summary || "No summary available",
+        insights: Array.isArray(result.insights) ? result.insights : [],
+        actionItems: Array.isArray(result.actionItems) ? result.actionItems : [],
+        overallProgress: typeof result.overallProgress === 'number' ? result.overallProgress : 0
+      };
+    } catch (apiError) {
+      console.error("OpenAI API error during summarization:", apiError);
+      
+      // Provide a fallback summary
+      return {
+        summary: `You have ${tasks.length} tasks. Focus on completing high priority items first.`,
+        insights: ["Consider managing deadlines more effectively", "Some tasks may need to be reassigned"],
+        actionItems: ["Review high priority tasks", "Update progress on in-progress tasks"],
+        overallProgress: 30
+      };
+    }
+  } catch (error) {
+    console.error("Failed to summarize tasks with AI:", error);
+    throw new Error(`Failed to summarize tasks with AI: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
 export async function processEmailWithAI(emailContent: string, options: ProcessEmailOptions): Promise<TaskOutput[]> {
   try {
     if (!emailContent || emailContent.trim() === "") {
@@ -98,7 +196,7 @@ ${emailContent}
       const result = JSON.parse(content);
       
       if (result.tasks && Array.isArray(result.tasks) && result.tasks.length > 0) {
-        return result.tasks.map(task => ({
+        return result.tasks.map((task: any) => ({
           ...task,
           id: `temp-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
           status: "todo",
