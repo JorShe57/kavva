@@ -79,7 +79,11 @@ export function setupEmailRoutes(app: express.Express) {
       });
     } catch (error) {
       console.error('Error processing test email:', error);
-      res.status(500).json({ message: 'Failed to process test email' });
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      res.status(500).json({ 
+        message: 'Failed to process test email',
+        error: errorMessage 
+      });
     }
   });
 
