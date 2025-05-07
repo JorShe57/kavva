@@ -355,11 +355,19 @@ export class DatabaseStorage implements IStorage {
       task,
       async (validData: InsertTask) => {
         storageLogger.info(`Creating task: ${validData.title}`);
-        const result = await db.insert(tasks).values(validData).returning();
         
-        if (!result.length) {
-          throw new Error('Failed to create task');
-        }
+        const result = await executeDbOperation(async (db) => {
+          const inserted = await db.insert(tasks).values(validData).returning();
+          
+          if (!inserted.length) {
+            throw new Error('Failed to create task');
+          }
+          
+          return inserted;
+        });
+        
+        // Invalidate relevant caches
+        clearCache(taskCache, `tasks:board:${validData.boardId}`);
         
         storageLogger.info(`Task created with ID: ${result[0].id}`);
         return result[0];
@@ -396,14 +404,27 @@ export class DatabaseStorage implements IStorage {
       async (validData: Partial<Task>) => {
         storageLogger.info(`Updating task ${taskId}`);
         
-        const result = await db
-          .update(tasks)
-          .set(validData)
-          .where(eq(tasks.id, taskId))
-          .returning();
+        const result = await executeDbOperation(async (db) => {
+          const updated = await db
+            .update(tasks)
+            .set(validData)
+            .where(eq(tasks.id, taskId))
+            .returning();
+          
+          if (!updated.length) {
+            throw new NotFoundError("Task");
+          }
+          
+          return updated;
+        });
         
-        if (!result.length) {
-          throw new NotFoundError("Task");
+        // Invalidate relevant caches
+        clearCache(taskCache, `task:${taskId}`);
+        clearCache(taskCache, `tasks:board:${existingTask.boardId}`);
+        
+        // If the task's status changed to completed, update user stats
+        if (validData.status === 'completed' && existingTask.status !== 'completed') {
+          // This will be handled by the gamification system via webhooks/events
         }
         
         storageLogger.info(`Task ${taskId} updated successfully`);
@@ -424,7 +445,7 @@ export class DatabaseStorage implements IStorage {
           throw new NotFoundError("Task");
         }
         
-        // Check if task exists
+        // Check if task exists and store it before deletion for cache invalidation
         const existingTask = await this.getTask(taskId);
         if (!existingTask) {
           throw new NotFoundError("Task");
@@ -432,7 +453,13 @@ export class DatabaseStorage implements IStorage {
         
         storageLogger.info(`Deleting task ${parsedTaskId}`);
         
-        await db.delete(tasks).where(eq(tasks.id, parsedTaskId));
+        await executeDbOperation(async (db) => {
+          await db.delete(tasks).where(eq(tasks.id, parsedTaskId));
+        });
+        
+        // Invalidate relevant caches
+        clearCache(taskCache, `task:${parsedTaskId}`);
+        clearCache(taskCache, `tasks:board:${existingTask.boardId}`);
         
         storageLogger.info(`Task ${parsedTaskId} deleted successfully`);
       },
