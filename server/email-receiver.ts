@@ -36,9 +36,6 @@ export function setupEmailRoutes(app: Express) {
       if (!user) {
         return res.status(404).json({ message: 'User not found for this email' });
       }
-      
-      // Find user by email address
-      const user = await storage.getUserByEmail(email.from);
       if (!user) {
         return res.status(404).json({ message: 'User not found for this email' });
       }
