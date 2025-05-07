@@ -12,8 +12,63 @@ import session from "express-session";
 import passport from "passport";
 import path from "path";
 import { logger } from "./middleware/logger";
+import { getDbConnection } from "./database/connection-manager";
+import { getCacheStats } from "./services/cacheService";
+import compression from "compression";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up compression middleware
+  app.use(compression());
+  
+  // Set up health check endpoint
+  app.get("/api/health", async (req, res) => {
+    try {
+      // Check database connection
+      const dbStatus = { operational: false, message: "" };
+      try {
+        const connection = await getDbConnection();
+        const client = await connection.pool.connect();
+        // Test a simple query
+        await client.query('SELECT 1');
+        client.release();
+        dbStatus.operational = true;
+        dbStatus.message = "Database connection successful";
+      } catch (error) {
+        dbStatus.message = `Database connection error: ${error instanceof Error ? error.message : String(error)}`;
+        logger.error(dbStatus.message);
+      }
+      
+      // Get cache statistics
+      const cacheStats = getCacheStats();
+      
+      // Return health status
+      res.json({
+        status: "ok",
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        version: process.env.npm_package_version || "unknown",
+        database: dbStatus,
+        cache: cacheStats,
+        environment: process.env.NODE_ENV
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        status: "error", 
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // Set up request timeout handler
+  app.use((req, res, next) => {
+    // Set a timeout for all requests (30 seconds)
+    req.setTimeout(30000, () => {
+      logger.warn(`Request timeout for ${req.method} ${req.url}`);
+      res.status(503).json({ message: "Request timed out. Please try again later." });
+    });
+    next();
+  });
+  
   // Set up session middleware
   app.use(
     session({
