@@ -5,6 +5,7 @@ import { useLocation } from "wouter";
 interface User {
   id: number;
   username: string;
+  email: string; // Added email to the User interface
 }
 
 interface AuthContextType {
@@ -12,7 +13,7 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   login: (username: string, password: string) => Promise<void>;
-  register: (username: string, password: string) => Promise<void>;
+  register: (username: string, email: string, password: string) => Promise<void>; // Added email to register function signature
   logout: () => Promise<void>;
 }
 
@@ -31,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const res = await fetch("/api/auth/me", {
           credentials: "include",
         });
-        
+
         if (res.ok) {
           const userData = await res.json();
           setUser(userData);
@@ -49,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (username: string, password: string) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const res = await apiRequest("POST", "/api/auth/login", { username, password });
       const userData = await res.json();
@@ -62,12 +63,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (username: string, password: string) => {
+  const register = async (username: string, email: string, password: string) => { // Added email parameter
     setLoading(true);
     setError(null);
-    
+
     try {
-      const res = await apiRequest("POST", "/api/auth/register", { username, password });
+      const res = await apiRequest("POST", "/api/auth/register", { username, email, password }); // Added email to request body
       const userData = await res.json();
       setUser(userData);
       navigate("/");
@@ -80,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     setLoading(true);
-    
+
     try {
       await apiRequest("POST", "/api/auth/logout", {});
       setUser(null);

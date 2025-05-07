@@ -46,10 +46,16 @@ export function setupAuthRoutes(app: Express) {
   // Register route
   app.post("/api/auth/register", async (req, res, next) => {
     try {
-      const { username, password } = req.body;
+      const { username, email, password } = req.body;
       
-      if (!username || !password) {
-        return res.status(400).json({ message: "Username and password are required" });
+      if (!username || !password || !email) {
+        return res.status(400).json({ message: "Username, email and password are required" });
+      }
+      
+      // Check if email already exists
+      const existingEmail = await storage.getUserByEmail(email);
+      if (existingEmail) {
+        return res.status(409).json({ message: "Email already registered" });
       }
       
       // Check if user already exists
