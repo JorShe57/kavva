@@ -145,7 +145,14 @@ export default function Dashboard() {
       // Short delay to show 100% completion
       setTimeout(() => {
         setIsProcessing(false);
-        setExtractedTasks(data.tasks || []);
+        
+        // Ensure all tasks have the correct boardId
+        const tasksWithBoardId = (data.tasks || []).map(task => ({
+          ...task,
+          boardId: boardId // Set the boardId from the email processor
+        }));
+        
+        setExtractedTasks(tasksWithBoardId);
         setShowResultsModal(true);
       }, 500);
       
@@ -162,10 +169,17 @@ export default function Dashboard() {
 
   const handleAddTasksToBoard = async (tasks: Task[]) => {
     try {
-      if (!activeBoard) {
+      // Extract the boardId from the first task
+      // This allows us to use the board ID from the email processor
+      // even if it's different from the active board
+      const targetBoardId = tasks.length > 0 && tasks[0].boardId 
+        ? String(tasks[0].boardId) 
+        : activeBoard;
+      
+      if (!targetBoardId) {
         toast({
           title: "Error",
-          description: "No active board selected",
+          description: "No board selected for these tasks",
           variant: "destructive"
         });
         return;
@@ -180,7 +194,7 @@ export default function Dashboard() {
         assignee: task.assignee,
         priority: task.priority || "medium",
         status: task.status || "todo",
-        boardId: Number(activeBoard), // Must be a number, not string
+        boardId: Number(targetBoardId), // Must be a number, not string
         emailSource: ""
       }));
       
@@ -194,7 +208,7 @@ export default function Dashboard() {
         },
         body: JSON.stringify({
           tasks: cleanedTasks,
-          boardId: Number(activeBoard) // Convert to number
+          boardId: Number(targetBoardId) // Use the target board ID
         }),
         credentials: 'include'
       });
@@ -208,8 +222,11 @@ export default function Dashboard() {
       const createdTasks = await response.json();
       console.log('Created tasks:', createdTasks);
       
-      // Invalidate tasks query
-      queryClient.invalidateQueries({ queryKey: ['/api/tasks', activeBoard] });
+      // Invalidate tasks query for both activeBoard and targetBoardId
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks', targetBoardId] });
+      if (activeBoard && activeBoard !== targetBoardId) {
+        queryClient.invalidateQueries({ queryKey: ['/api/tasks', activeBoard] });
+      }
       setShowResultsModal(false);
       toast({
         title: "Success",
