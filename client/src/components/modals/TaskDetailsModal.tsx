@@ -17,7 +17,7 @@ interface TaskDetailsModalProps {
   onSave: (updatedTask: Task) => void;
 }
 
-
+export default function TaskDetailsModal({ task, onClose, onSave }: TaskDetailsModalProps) {
   // Fetch recommendations
   const { data: recommendations, isLoading: loadingRecommendations } = useQuery({
     queryKey: ['taskRecommendations', task?.id],
@@ -29,8 +29,6 @@ interface TaskDetailsModalProps {
     },
     enabled: !!task?.id
   });
-
-export default function TaskDetailsModal({ task, onClose, onSave }: TaskDetailsModalProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   // Create a properly typed initial state

@@ -42,6 +42,11 @@ const defaultTestTasks = [
     title: "Review project proposal",
     description: "Review the project proposal document before Thursday's meeting",
     dueDate: "2025-05-29", // Thursday
+    assignee: null,
+    priority: "medium",
+    status: "todo"
+  }
+];
 
 export const getTaskRecommendations = async (task: TaskOutput): Promise<{ recommendations: string[], steps: string[] }> => {
   try {
@@ -90,13 +95,7 @@ Return a JSON object with:
       steps: ["Plan the approach", "Execute the core requirements", "Review and refine"]
     };
   }
-}
-
-    assignee: null,
-    priority: "medium",
-    status: "todo"
-  }
-];
+};
 
 interface TaskSummaryOptions {
   username: string;
