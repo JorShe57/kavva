@@ -48,6 +48,17 @@ export default function TaskBoard({
     alert("Link copied to clipboard!");
     setShowShareOptions(false);
   };
+  
+  // Handle task status change from TaskActionButton
+  const handleTaskStatusChange = (updatedTask: Task, newStatus: string) => {
+    // Update local task state
+    const updatedTasks = tasks.map(task => 
+      task.id === updatedTask.id ? updatedTask : task
+    );
+    
+    // Invalidate the tasks query to refresh data
+    queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
@@ -185,7 +196,8 @@ export default function TaskBoard({
                   <TaskCard 
                     key={task.id} 
                     task={task} 
-                    onClick={() => onTaskClick(task)} 
+                    onClick={() => onTaskClick(task)}
+                    onStatusChange={handleTaskStatusChange}
                   />
                 ))
               ) : (
@@ -256,7 +268,8 @@ export default function TaskBoard({
                   <TaskCard 
                     key={task.id} 
                     task={task} 
-                    onClick={() => onTaskClick(task)} 
+                    onClick={() => onTaskClick(task)}
+                    onStatusChange={handleTaskStatusChange}
                   />
                 ))
               ) : (

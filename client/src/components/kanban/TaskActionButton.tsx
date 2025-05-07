@@ -22,6 +22,9 @@ export default function TaskActionButton({ task, onStatusChange }: TaskActionBut
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
   
+  // Convert task.id to string once to avoid multiple conversions
+  const taskId = String(task.id);
+  
   const handleMarkComplete = async () => {
     if (task.status === 'completed') return;
     
@@ -30,12 +33,12 @@ export default function TaskActionButton({ task, onStatusChange }: TaskActionBut
       // First update the task in the database
       const updatedTask = await apiRequest(
         'PATCH',
-        `/api/tasks/${String(task.id)}`,
+        `/api/tasks/${taskId}`,
         { status: 'completed', completedAt: new Date().toISOString() }
       ).then(res => res.json());
       
       // Then trigger the gamification event
-      await triggerTaskCompleted(String(task.id));
+      await triggerTaskCompleted(taskId);
       
       // Update UI
       if (onStatusChange) {
@@ -49,7 +52,7 @@ export default function TaskActionButton({ task, onStatusChange }: TaskActionBut
       });
       
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: [`/api/tasks/${task.id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
     } catch (error) {
       console.error('Failed to complete task:', error);
@@ -71,7 +74,7 @@ export default function TaskActionButton({ task, onStatusChange }: TaskActionBut
       // Update the task in the database
       const updatedTask = await apiRequest(
         'PATCH',
-        `/api/tasks/${String(task.id)}`,
+        `/api/tasks/${taskId}`,
         { status: 'in_progress', completedAt: null }
       ).then(res => res.json());
       
@@ -87,7 +90,7 @@ export default function TaskActionButton({ task, onStatusChange }: TaskActionBut
       });
       
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: [`/api/tasks/${task.id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tasks/${taskId}`] });
       queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
     } catch (error) {
       console.error('Failed to reopen task:', error);
