@@ -28,7 +28,7 @@ export function setupEmailRoutes(app: Express) {
       const emailPayload: EmailPayload = {
         from: email.from.email,
         subject: email.subject,
-        text: email.text,
+        text: email.text || email.subject, // Fallback to subject if no text
         html: email.html,
         timestamp: new Date().toISOString()
       };
@@ -36,9 +36,7 @@ export function setupEmailRoutes(app: Express) {
       // Find user by email address
       const user = await storage.getUserByEmail(emailPayload.from);
       if (!user) {
-        return res.status(404).json({ message: 'User not found for this email' });
-      }
-      if (!user) {
+        console.log('User not found for email:', emailPayload.from);
         return res.status(404).json({ message: 'User not found for this email' });
       }
 
@@ -47,11 +45,12 @@ export function setupEmailRoutes(app: Express) {
       const defaultBoard = boards[0]; // Use first board as default
       
       if (!defaultBoard) {
+        console.log('No boards found for user:', user.id);
         return res.status(404).json({ message: 'No boards found for user' });
       }
 
       // Process email content with AI
-      const tasks = await processEmailWithAI(email.text, {
+      const tasks = await processEmailWithAI(emailPayload.text, {
         assignmentOption: 'assignToMe',
         username: user.username
       });
@@ -63,11 +62,12 @@ export function setupEmailRoutes(app: Express) {
           ...task,
           boardId: defaultBoard.id,
           userId: user.id,
-          emailSource: email.text
+          emailSource: emailPayload.text
         });
         createdTasks.push(newTask);
       }
 
+      console.log('Created tasks from email:', createdTasks.length);
       res.status(201).json({ 
         message: 'Email processed successfully',
         tasks: createdTasks 
