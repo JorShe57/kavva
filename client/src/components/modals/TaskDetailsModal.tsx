@@ -1,0 +1,200 @@
+import { useState } from "react";
+import { Task } from "@shared/schema";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { format } from "date-fns";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+
+interface TaskDetailsModalProps {
+  task: Task;
+  onClose: () => void;
+  onSave: (updatedTask: Task) => void;
+}
+
+export default function TaskDetailsModal({ task, onClose, onSave }: TaskDetailsModalProps) {
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [taskData, setTaskData] = useState<Task>({...task});
+  
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setTaskData((prev) => ({ ...prev, [name]: value }));
+  };
+  
+  const handleSelectChange = (name: string, value: string) => {
+    setTaskData((prev) => ({ ...prev, [name]: value }));
+  };
+  
+  const handleSave = async () => {
+    setIsLoading(true);
+    
+    try {
+      await apiRequest("PATCH", `/api/tasks/${task.id}`, taskData);
+      toast({
+        title: "Task updated",
+        description: "Your task has been updated successfully.",
+      });
+      onSave(taskData);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update task. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this task?")) {
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      await apiRequest("DELETE", `/api/tasks/${task.id}`, undefined);
+      toast({
+        title: "Task deleted",
+        description: "Your task has been deleted successfully.",
+      });
+      onClose();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete task. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Task Details</DialogTitle>
+          <DialogDescription>
+            View and edit task details
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="grid gap-6 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="title">Task Title</Label>
+            <Input 
+              id="title" 
+              name="title"
+              value={taskData.title}
+              onChange={handleChange}
+            />
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea 
+              id="description" 
+              name="description"
+              value={taskData.description}
+              onChange={handleChange}
+              rows={4}
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="dueDate">Due Date</Label>
+              <Input 
+                id="dueDate" 
+                name="dueDate"
+                type="date"
+                value={taskData.dueDate ? format(new Date(taskData.dueDate), "yyyy-MM-dd") : ""}
+                onChange={handleChange}
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="priority">Priority</Label>
+              <Select 
+                value={taskData.priority} 
+                onValueChange={(value) => handleSelectChange("priority", value)}
+              >
+                <SelectTrigger id="priority">
+                  <SelectValue placeholder="Select priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="assignee">Assignee</Label>
+              <Input 
+                id="assignee" 
+                name="assignee"
+                value={taskData.assignee || ""}
+                onChange={handleChange}
+                placeholder="Enter assignee name"
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="status">Status</Label>
+              <Select 
+                value={taskData.status} 
+                onValueChange={(value) => handleSelectChange("status", value)}
+              >
+                <SelectTrigger id="status">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todo">To Do</SelectItem>
+                  <SelectItem value="inprogress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          {task.emailSource && (
+            <div className="grid gap-2">
+              <Label>Extracted From Email</Label>
+              <div className="bg-muted rounded-md p-4 font-mono text-sm text-muted-foreground max-h-40 overflow-y-auto">
+                <p>{task.emailSource}</p>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        <DialogFooter className="flex justify-between sm:justify-between">
+          <Button 
+            variant="destructive" 
+            onClick={handleDelete}
+            disabled={isLoading}
+          >
+            Delete
+          </Button>
+          <Button 
+            variant="default"
+            onClick={handleSave}
+            disabled={isLoading}
+          >
+            {isLoading ? "Saving..." : "Save Changes"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
