@@ -6,6 +6,13 @@ import { MailService } from '@sendgrid/mail';
 import * as SendGridInbound from '@sendgrid/inbound-mail-parser';
 
 const SendGrid = new MailService();
+SendGrid.setApiKey(process.env.SENDGRID_API_KEY || '');
+
+// Configure SendGrid domain settings
+const SENDGRID_DOMAIN = process.env.SENDGRID_DOMAIN || 'your-domain.com';
+const SENDGRID_WEBHOOK_URL = process.env.REPL_SLUG ? 
+  `https://${process.env.REPL_SLUG}.replit.dev/api/email/webhook` :
+  'http://localhost:5000/api/email/webhook';
 
 interface EmailPayload {
   from: string;
