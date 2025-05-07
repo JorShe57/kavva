@@ -1,8 +1,21 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import cors from "cors";
 
 const app = express();
+
+// Configure CORS
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://autotracker.app', /\.replit\.app$/] // Allow our domains in production
+    : ['http://localhost:5000', 'http://localhost:3000'], // Allow local development
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  credentials: true, // Allow cookies to be sent with requests
+  maxAge: 86400 // Cache preflight requests for 24 hours
+};
+app.use(cors(corsOptions));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

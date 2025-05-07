@@ -6,8 +6,12 @@ import { initializeUserStats } from "./gamification";
 import * as bcrypt from "bcryptjs";
 import { Request, Response, NextFunction } from "express";
 import rateLimit from "express-rate-limit";
+import { insertUserSchema } from "@shared/schema";
+import { z } from "zod";
 
 export function setupAuthRoutes(app: Express) {
+  // Enable Express to trust the X-Forwarded-For header
+  app.set('trust proxy', 1);
   // Create rate limiters for auth endpoints
   const loginRateLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -71,14 +75,37 @@ export function setupAuthRoutes(app: Express) {
     }
   });
   
+  // Create enhanced registration schema with additional validation
+  const enhancedRegisterSchema = insertUserSchema.extend({
+    username: z.string().min(3).max(50).regex(/^[a-zA-Z0-9_]+$/, 
+      "Username can only contain letters, numbers, and underscores"),
+    email: z.string().email("Invalid email format"),
+    password: z.string().min(8, "Password must be at least 8 characters")
+      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+      .regex(/[0-9]/, "Password must contain at least one number")
+  });
+
+  // Login validation schema
+  const loginSchema = z.object({
+    username: z.string().min(1, "Username is required"),
+    password: z.string().min(1, "Password is required")
+  });
+
   // Register route
   app.post("/api/auth/register", registerRateLimiter, async (req, res, next) => {
     try {
-      const { username, email, password } = req.body;
+      // Validate input using Zod schema
+      const validationResult = enhancedRegisterSchema.safeParse(req.body);
       
-      if (!username || !password || !email) {
-        return res.status(400).json({ message: "Username, email and password are required" });
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Validation failed", 
+          errors: validationResult.error.errors
+        });
       }
+      
+      const { username, email, password } = validationResult.data;
       
       // Check if email already exists
       const existingEmail = await storage.getUserByEmail(email);
@@ -117,7 +144,10 @@ export function setupAuthRoutes(app: Express) {
         if (err) {
           return next(err);
         }
-        return res.status(201).json(user);
+        
+        // Don't return the password in the response
+        const { password, ...userWithoutPassword } = user;
+        return res.status(201).json(userWithoutPassword);
       });
     } catch (error) {
       next(error);
@@ -126,7 +156,17 @@ export function setupAuthRoutes(app: Express) {
   
   // Login route
   app.post("/api/auth/login", loginRateLimiter, (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+    // Validate login input
+    const validationResult = loginSchema.safeParse(req.body);
+    
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        message: "Validation failed", 
+        errors: validationResult.error.errors
+      });
+    }
+    
+    passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) {
         return next(err);
       }
@@ -139,7 +179,10 @@ export function setupAuthRoutes(app: Express) {
         if (loginErr) {
           return next(loginErr);
         }
-        return res.json(user);
+        
+        // Don't return the password in the response
+        const { password, ...userWithoutPassword } = user;
+        return res.json(userWithoutPassword);
       });
     })(req, res, next);
   });
