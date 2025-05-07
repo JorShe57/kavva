@@ -2,6 +2,8 @@
 import type { Express } from 'express';
 import { storage } from './storage';
 import { processEmailWithAI } from './openai';
+import * as SendGrid from '@sendgrid/mail';
+import * as SendGridInbound from '@sendgrid/inbound-mail-parser';
 
 interface EmailPayload {
   from: string;
@@ -12,8 +14,22 @@ interface EmailPayload {
 }
 
 export function setupEmailRoutes(app: Express) {
-  // Endpoint to receive forwarded emails
-  app.post('/api/email/receive', async (req, res) => {
+  // Initialize SendGrid
+  SendGrid.setApiKey(process.env.SENDGRID_API_KEY || '');
+
+  // Endpoint to receive emails from SendGrid
+  app.post('/api/email/webhook', async (req, res) => {
+    try {
+      const email = new SendGridInbound.Parse(req.body);
+      
+      // Extract email content
+      const emailPayload = {
+        from: email.from.email,
+        subject: email.subject,
+        text: email.text,
+        html: email.html,
+        timestamp: new Date().toISOString()
+      };
     try {
       const email: EmailPayload = req.body;
       
