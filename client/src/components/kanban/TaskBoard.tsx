@@ -118,9 +118,33 @@ export default function TaskBoard({ tasks, loading, onTaskClick, boardId }: Task
                 <div className={cn("w-3 h-3 rounded-full mr-2", statusColors.todo)}></div>
                 <h3 className="font-medium">To Do</h3>
               </div>
-              <span className="bg-background text-muted-foreground px-2 py-1 rounded-full text-xs font-medium">
-                {tasksByStatus.todo.length}
-              </span>
+              <div className="flex items-center">
+                <span className="bg-background text-muted-foreground px-2 py-1 rounded-full text-xs font-medium mr-2">
+                  {tasksByStatus.todo.length}
+                </span>
+                <button
+                  className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-background"
+                  title="Add new task"
+                  onClick={() => {
+                    const newTask = {
+                      id: `temp-${Date.now()}`,
+                      title: "New Task",
+                      description: "Task description",
+                      status: "todo",
+                      priority: "medium",
+                      boardId,
+                      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                      createdAt: new Date().toISOString(),
+                      userId: 0 // This will be set by the server
+                    } as Task;
+                    onTaskClick(newTask as Task);
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                </button>
+              </div>
             </div>
             
             {/* Task Cards */}
@@ -163,9 +187,33 @@ export default function TaskBoard({ tasks, loading, onTaskClick, boardId }: Task
                 <div className={cn("w-3 h-3 rounded-full mr-2", statusColors.inprogress)}></div>
                 <h3 className="font-medium">In Progress</h3>
               </div>
-              <span className="bg-background text-muted-foreground px-2 py-1 rounded-full text-xs font-medium">
-                {tasksByStatus.inprogress.length}
-              </span>
+              <div className="flex items-center">
+                <span className="bg-background text-muted-foreground px-2 py-1 rounded-full text-xs font-medium mr-2">
+                  {tasksByStatus.inprogress.length}
+                </span>
+                <button
+                  className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-background"
+                  title="Add new task"
+                  onClick={() => {
+                    const newTask = {
+                      id: `temp-${Date.now()}`,
+                      title: "New Task",
+                      description: "Task description",
+                      status: "inprogress",
+                      priority: "medium",
+                      boardId,
+                      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                      createdAt: new Date().toISOString(),
+                      userId: 0 // This will be set by the server
+                    } as Task;
+                    onTaskClick(newTask);
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                </button>
+              </div>
             </div>
             
             {/* Task Cards */}

@@ -42,6 +42,16 @@ export default function Dashboard() {
   // Query to fetch tasks for the active board
   const { data: tasks = [], isLoading: tasksLoading } = useQuery<Task[]>({ 
     queryKey: ['/api/tasks', activeBoard],
+    queryFn: async () => {
+      if (!activeBoard) return [];
+      const response = await fetch(`/api/tasks?boardId=${activeBoard}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch tasks');
+      }
+      return response.json();
+    },
     enabled: !!activeBoard
   });
   
@@ -164,12 +174,16 @@ export default function Dashboard() {
         throw new Error('Failed to add tasks to board');
       }
       
+      // Get the created tasks from the response
+      const createdTasks = await response.json();
+      console.log('Created tasks:', createdTasks);
+      
       // Invalidate tasks query
       queryClient.invalidateQueries({ queryKey: ['/api/tasks', activeBoard] });
       setShowResultsModal(false);
       toast({
         title: "Success",
-        description: "Tasks added to board"
+        description: `${tasks.length} task${tasks.length !== 1 ? 's' : ''} added to board`
       });
     } catch (error) {
       console.error('Error adding tasks:', error);

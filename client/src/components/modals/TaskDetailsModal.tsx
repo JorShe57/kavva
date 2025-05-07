@@ -34,16 +34,61 @@ export default function TaskDetailsModal({ task, onClose, onSave }: TaskDetailsM
     setIsLoading(true);
     
     try {
-      await apiRequest("PATCH", `/api/tasks/${task.id}`, taskData);
-      toast({
-        title: "Task updated",
-        description: "Your task has been updated successfully.",
-      });
-      onSave(taskData);
+      // Check if this is a new task or existing task
+      const isNewTask = !task.id || task.id.toString().startsWith('temp-');
+      
+      if (isNewTask) {
+        // Create new task
+        const response = await fetch('/api/tasks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(taskData),
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to create task');
+        }
+        
+        const newTask = await response.json();
+        
+        toast({
+          title: "Task created",
+          description: "Your task has been created successfully.",
+        });
+        
+        onSave(newTask);
+      } else {
+        // Update existing task
+        const response = await fetch(`/api/tasks/${task.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(taskData),
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to update task');
+        }
+        
+        const updatedTask = await response.json();
+        
+        toast({
+          title: "Task updated",
+          description: "Your task has been updated successfully.",
+        });
+        
+        onSave(updatedTask);
+      }
     } catch (error) {
+      console.error('Error saving task:', error);
       toast({
         title: "Error",
-        description: "Failed to update task. Please try again.",
+        description: `Failed to ${!task.id ? 'create' : 'update'} task. Please try again.`,
         variant: "destructive",
       });
     } finally {
