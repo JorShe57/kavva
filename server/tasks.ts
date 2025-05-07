@@ -74,9 +74,12 @@ export function setupTaskRoutes(app: Express) {
     }
     
     try {
+      console.log("Received batch task request body:", JSON.stringify(req.body, null, 2));
+      
       const { tasks, boardId } = req.body;
       
       if (!Array.isArray(tasks) || !boardId) {
+        console.log("Invalid batch data. Tasks is array:", Array.isArray(tasks), "boardId:", boardId);
         return res.status(400).json({ message: "Invalid request data" });
       }
       
@@ -91,16 +94,30 @@ export function setupTaskRoutes(app: Express) {
         return res.status(403).json({ message: "Forbidden" });
       }
       
+      // Each task already has the boardId property from the client,
+      // so we don't need to add it again. However, make sure we're dealing with a clean task object.
+      console.log("Creating tasks with board ID:", boardId);
+      
       const createdTasks = await Promise.all(
-        tasks.map(task => storage.createTask({
-          ...task,
-          boardId,
-        }))
+        tasks.map(task => {
+          console.log("Creating task:", task);
+          // Make sure we're using the correct boardId (the one from the request)
+          return storage.createTask({
+            ...task,
+            // If somehow the task boardId doesn't match the request boardId, use the request boardId
+            boardId: Number(boardId),
+          });
+        })
       );
       
+      console.log("Successfully created tasks:", createdTasks.length);
       res.status(201).json(createdTasks);
     } catch (error) {
-      res.status(500).json({ message: "Failed to create tasks" });
+      console.error("Error creating tasks:", error);
+      res.status(500).json({ 
+        message: "Failed to create tasks", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
     }
   });
 

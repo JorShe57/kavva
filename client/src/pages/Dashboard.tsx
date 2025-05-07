@@ -161,14 +161,26 @@ export default function Dashboard() {
 
   const handleAddTasksToBoard = async (tasks: Task[]) => {
     try {
+      if (!activeBoard) {
+        toast({
+          title: "Error",
+          description: "No active board selected",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       // Clean up tasks - remove temporary IDs and extract only necessary properties
+      // Make sure we include all required fields from insertTaskSchema
       const cleanedTasks = tasks.map(task => ({
         title: task.title,
         description: task.description || "",
-        dueDate: task.dueDate,
+        dueDate: task.dueDate ? new Date(task.dueDate) : null,
         assignee: task.assignee,
-        priority: task.priority,
-        status: task.status,
+        priority: task.priority || "medium",
+        status: task.status || "todo",
+        boardId: Number(activeBoard), // Must be a number, not string
+        emailSource: ""
       }));
       
       console.log('Sending tasks to server:', cleanedTasks);
@@ -181,13 +193,14 @@ export default function Dashboard() {
         },
         body: JSON.stringify({
           tasks: cleanedTasks,
-          boardId: activeBoard
+          boardId: Number(activeBoard) // Convert to number
         }),
         credentials: 'include'
       });
       
       if (!response.ok) {
-        throw new Error('Failed to add tasks to board');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || 'Failed to add tasks to board');
       }
       
       // Get the created tasks from the response
@@ -205,7 +218,7 @@ export default function Dashboard() {
       console.error('Error adding tasks:', error);
       toast({
         title: "Error",
-        description: "Failed to add tasks to board",
+        description: error instanceof Error ? error.message : "Failed to add tasks to board",
         variant: "destructive"
       });
     }
