@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -48,11 +48,20 @@ export default function Dashboard() {
   // Mutation to create a new board
   const createBoardMutation = useMutation({
     mutationFn: async (title: string) => {
-      return apiRequest(
-        'POST',
-        '/api/boards',
-        { title, userId: user?.id }
-      );
+      const response = await fetch('/api/boards', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title, userId: user?.id }),
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create board');
+      }
+      
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/boards'] });
@@ -72,11 +81,12 @@ export default function Dashboard() {
     }
   });
 
-  // Redirect to login if not authenticated
-  if (!loading && !user) {
-    navigate("/login");
-    return null;
-  }
+  // Handle redirection in a useEffect to avoid state updates during render
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/login");
+    }
+  }, [loading, user, navigate]);
 
   const handleProcessEmail = async (emailContent: string, boardId: string, assignmentOption: string) => {
     setIsProcessing(true);
@@ -95,19 +105,32 @@ export default function Dashboard() {
       }, 300);
       
       // Make the actual API request
-      const data = await apiRequest('POST', '/api/process-email', {
-        emailContent,
-        boardId,
-        assignmentOption
+      const response = await fetch('/api/process-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          emailContent,
+          boardId,
+          assignmentOption
+        }),
+        credentials: 'include'
       });
       
       clearInterval(timer);
+      
+      if (!response.ok) {
+        throw new Error('Failed to process email');
+      }
+      
+      const data = await response.json();
       setProcessingProgress(100);
       
       // Short delay to show 100% completion
       setTimeout(() => {
         setIsProcessing(false);
-        setExtractedTasks(data.tasks);
+        setExtractedTasks(data.tasks || []);
         setShowResultsModal(true);
       }, 500);
       
@@ -124,10 +147,22 @@ export default function Dashboard() {
 
   const handleAddTasksToBoard = async (tasks: Task[]) => {
     try {
-      await apiRequest('POST', '/api/tasks/batch', {
-        tasks: tasks,
-        boardId: activeBoard
+      // Use fetch directly to avoid Response type issues
+      const response = await fetch('/api/tasks/batch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tasks: tasks,
+          boardId: activeBoard
+        }),
+        credentials: 'include'
       });
+      
+      if (!response.ok) {
+        throw new Error('Failed to add tasks to board');
+      }
       
       // Invalidate tasks query
       queryClient.invalidateQueries({ queryKey: ['/api/tasks', activeBoard] });
