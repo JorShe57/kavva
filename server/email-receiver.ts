@@ -64,8 +64,10 @@ export function setupEmailRoutes(app: express.Express) {
 
       const createdTasks = [];
       for (const task of tasks) {
+        // Remove the temporary ID before creating the task
+        const { id, ...taskWithoutId } = task;
         const newTask = await storage.createTask({
-          ...task,
+          ...taskWithoutId,
           boardId: defaultBoard.id,
           userId: user.id,
           emailSource: emailPayload.text
@@ -118,8 +120,10 @@ export function setupEmailRoutes(app: express.Express) {
 
       const createdTasks = [];
       for (const task of tasks) {
+        // Remove the temporary ID before creating the task
+        const { id, ...taskWithoutId } = task;
         const newTask = await storage.createTask({
-          ...task,
+          ...taskWithoutId,
           boardId: defaultBoard.id,
           userId: user.id,
           emailSource: emailPayload.text
