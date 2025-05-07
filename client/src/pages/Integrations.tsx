@@ -13,8 +13,9 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Github, Mail, MessageCircle, Slack, Smartphone, ExternalLink } from "lucide-react";
+import { Calendar,  Mail, MessageCircle, Slack, Smartphone, ExternalLink } from "lucide-react";
 import { SiTrello, SiAsana, SiGooglecalendar, SiNotion, SiGoogle } from "react-icons/si";
+import { GithubIcon } from 'lucide-react';
 
 export default function Integrations() {
   const { user, loading } = useAuth();
@@ -22,7 +23,7 @@ export default function Integrations() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showConnectDialog, setShowConnectDialog] = useState(false);
   const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null);
-  
+
   // Query to fetch boards
   const { data: boards = [] } = useQuery<TaskBoardType[]>({ 
     queryKey: ['/api/boards'],
@@ -51,10 +52,10 @@ export default function Integrations() {
         activeBoard={null}
         onBoardSelect={() => {}}
       />
-      
+
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header onMenuClick={() => setSidebarOpen(true)} />
-        
+
         <main className="flex-1 overflow-y-auto p-6">
           <div className="mb-8">
             <h1 className="text-2xl font-semibold text-foreground">Integrations</h1>
@@ -69,7 +70,7 @@ export default function Integrations() {
               <TabsTrigger value="communication">Communication</TabsTrigger>
               <TabsTrigger value="calendar">Calendar</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="productivity" className="pt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <IntegrationCard 
@@ -79,7 +80,7 @@ export default function Integrations() {
                   status="available"
                   onConnect={() => handleConnectIntegration('Trello')}
                 />
-                
+
                 <IntegrationCard 
                   title="Asana"
                   description="Sync your Asana tasks with AutoTrackAI."
@@ -87,15 +88,15 @@ export default function Integrations() {
                   status="available"
                   onConnect={() => handleConnectIntegration('Asana')}
                 />
-                
+
                 <IntegrationCard 
                   title="GitHub"
                   description="Link GitHub issues directly to your tasks."
-                  icon={<Github className="w-8 h-8" />}
+                  icon={<GithubIcon className="w-8 h-8" />}
                   status="available"
                   onConnect={() => handleConnectIntegration('GitHub')}
                 />
-                
+
                 <IntegrationCard 
                   title="Notion"
                   description="Integrate with Notion databases and pages."
@@ -105,7 +106,7 @@ export default function Integrations() {
                 />
               </div>
             </TabsContent>
-            
+
             <TabsContent value="communication" className="pt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <IntegrationCard 
@@ -115,7 +116,7 @@ export default function Integrations() {
                   status="available"
                   onConnect={() => handleConnectIntegration('Slack')}
                 />
-                
+
                 <IntegrationCard 
                   title="Email Integration"
                   description="Forward emails to create tasks automatically."
@@ -123,7 +124,7 @@ export default function Integrations() {
                   status="connected"
                   onConnect={() => handleConnectIntegration('Email')}
                 />
-                
+
                 <IntegrationCard 
                   title="Microsoft Teams"
                   description="Create tasks from Teams messages and chats."
@@ -131,7 +132,7 @@ export default function Integrations() {
                   status="coming_soon"
                   onConnect={() => {}}
                 />
-                
+
                 <IntegrationCard 
                   title="SMS Notifications"
                   description="Get task reminders via text message."
@@ -141,7 +142,7 @@ export default function Integrations() {
                 />
               </div>
             </TabsContent>
-            
+
             <TabsContent value="calendar" className="pt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <IntegrationCard 
@@ -151,7 +152,7 @@ export default function Integrations() {
                   status="available"
                   onConnect={() => handleConnectIntegration('Google Calendar')}
                 />
-                
+
                 <IntegrationCard 
                   title="Outlook Calendar"
                   description="Add task deadlines to your Outlook calendar."
@@ -159,7 +160,7 @@ export default function Integrations() {
                   status="available"
                   onConnect={() => handleConnectIntegration('Outlook')}
                 />
-                
+
                 <IntegrationCard 
                   title="Apple Calendar"
                   description="Sync with Apple Calendar on your devices."
@@ -194,7 +195,7 @@ export default function Integrations() {
                       <Button variant="outline">Regenerate</Button>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-md font-medium">Webhook URL</h3>
@@ -230,7 +231,7 @@ export default function Integrations() {
           </div>
         </main>
       </div>
-      
+
       {/* Integration Connection Dialog */}
       <Dialog open={showConnectDialog} onOpenChange={setShowConnectDialog}>
         <DialogContent className="sm:max-w-[425px]">

@@ -173,12 +173,11 @@ export async function handleTaskCompleted(userId: number, taskId: string) {
     return;
   }
   
-  // Update task with completedAt timestamp if not already set
-  if (!task.completedAt) {
-    await storage.updateTask(taskId, { 
-      completedAt: new Date() 
-    });
-  }
+  // Always update completedAt timestamp and status when completing task
+  await storage.updateTask(taskId, { 
+    completedAt: new Date(),
+    status: 'completed'
+  });
   
   // Update stats
   const updatedTaskCount = userStat.tasksCompleted + 1;
