@@ -1,4 +1,3 @@
-
 import express from 'express';
 import { storage } from './storage';
 import { processEmailWithAI } from './openai';
@@ -23,11 +22,11 @@ export function setupEmailRoutes(app: express.Express) {
       }
 
       // For testing, create a simplified email object that matches the expected structure
-      const testEmail = req.body.from || 'test@example.com';
-      
+      const testEmail = 'jorshevel@gmail.com'; // Using the specified email address
+
       // First check if user exists
-      const user = await storage.getUserByEmail(testEmail);
-      if (!user) {
+      const existingUser = await storage.getUserByEmail(testEmail);
+      if (!existingUser) {
         return res.status(404).json({ message: `No user found with email ${testEmail}. Please register first or use a registered email for testing.` });
       }
 
@@ -51,7 +50,7 @@ export function setupEmailRoutes(app: express.Express) {
         return res.status(404).json({ message: 'User not found for this email' });
       }
 
-      const boards = await storage.getBoardsByUserId(user.id);
+      const boards = await storage.getBoardsByUserId(existingUser.id); // Use existingUser.id here
       const defaultBoard = boards[0];
 
       if (!defaultBoard) {
