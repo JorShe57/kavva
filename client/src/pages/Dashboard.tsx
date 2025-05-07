@@ -10,12 +10,11 @@ import TaskDetailsModal from "@/components/modals/TaskDetailsModal";
 import ProcessingModal from "@/components/modals/ProcessingModal";
 import ResultsModal from "@/components/modals/ResultsModal";
 import TaskSummaryModal, { TaskSummaryData } from "@/components/modals/TaskSummaryModal";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Task, TaskBoard as TaskBoardType } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Sparkles } from "lucide-react";
@@ -345,6 +344,13 @@ export default function Dashboard() {
         tasks={extractedTasks}
         onClose={() => setShowResultsModal(false)}
         onAddTasks={handleAddTasksToBoard}
+      />
+
+      <TaskSummaryModal
+        isOpen={showSummaryModal}
+        onClose={() => setShowSummaryModal(false)}
+        summary={taskSummary}
+        loading={isSummarizing}
       />
       
       {/* New Board Dialog */}
