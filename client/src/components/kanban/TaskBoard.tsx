@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Task } from "@shared/schema";
 import TaskCard from "./TaskCard";
 import QuickSummaryButton from "./QuickSummaryButton";
-import TaskDependencyGraph from "./TaskDependencyGraph";
 import { cn, statusColors } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,6 @@ import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { downloadAsPDF, generateShareableLink } from "@/lib/utils";
 import { TaskSummaryData } from "@/components/modals/TaskSummaryModal";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface TaskBoardProps {
   tasks: Task[];
@@ -130,244 +128,231 @@ export default function TaskBoard({
         </div>
       </div>
       
-      {/* Task Board Content with Tabs */}
-      <Tabs defaultValue="kanban" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="kanban">Kanban Board</TabsTrigger>
-          <TabsTrigger value="dependencies">Task Dependencies</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="kanban" className="mt-0">
-          <div className="flex overflow-x-auto pb-4 scrollbar-hide">
-            {/* To Do Column */}
-            <div className="kanban-column mr-4 flex-shrink-0">
-              <div className="bg-muted rounded-md p-4 w-80">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center">
-                    <div className={cn("w-3 h-3 rounded-full mr-2", statusColors.todo)}></div>
-                    <h3 className="font-medium">To Do</h3>
-                  </div>
-                  <div className="flex items-center">
-                    {onSummaryGenerated && (
-                      <QuickSummaryButton 
-                        boardId={boardId} 
-                        onSummaryGenerated={onSummaryGenerated}
-                        disabled={loading || tasks.length === 0}
-                      />
-                    )}
-                    <span className="bg-background text-muted-foreground px-2 py-1 rounded-full text-xs font-medium ml-1 mr-2">
-                      {tasksByStatus.todo.length}
-                    </span>
-                    <button
-                      className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-background"
-                      title="Add new task"
-                      onClick={() => {
-                        // Create a temporary task with default values
-                        const newTask = {
-                          id: `temp-${Date.now()}`,
-                          title: "New Task",
-                          description: "Task description",
-                          status: "todo",
-                          priority: "medium",
-                          boardId: Number(boardId),
-                          dueDate: null,
-                          assignee: null,
-                          createdAt: new Date(),
-                          emailSource: null
-                        } as unknown as Task;
-                        onTaskClick(newTask as Task);
-                      }}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 5v14M5 12h14" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-                
-                {/* Task Cards */}
-                <div className="space-y-3">
-                  {loading ? (
-                    // Skeleton loader
-                    Array.from({ length: 3 }).map((_, i) => (
-                      <div key={i} className="bg-white rounded-md shadow-sm p-4">
-                        <Skeleton className="h-6 w-3/4 mb-3" />
-                        <Skeleton className="h-4 w-full mb-2" />
-                        <Skeleton className="h-4 w-2/3 mb-3" />
-                        <div className="flex justify-between items-center">
-                          <Skeleton className="h-4 w-1/4" />
-                          <Skeleton className="h-8 w-8 rounded-full" />
-                        </div>
-                      </div>
-                    ))
-                  ) : tasksByStatus.todo.length > 0 ? (
-                    tasksByStatus.todo.map((task) => (
-                      <TaskCard 
-                        key={task.id} 
-                        task={task} 
-                        onClick={() => onTaskClick(task)}
-                        onStatusChange={handleTaskStatusChange}
-                      />
-                    ))
-                  ) : (
-                    <div className="bg-white rounded-md shadow-sm p-4 text-center text-muted-foreground">
-                      No tasks to do
-                    </div>
-                  )}
-                </div>
+      {/* Task Board Content */}
+      <div className="flex overflow-x-auto pb-4 scrollbar-hide">
+        {/* To Do Column */}
+        <div className="kanban-column mr-4 flex-shrink-0">
+          <div className="bg-muted rounded-md p-4 w-80">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <div className={cn("w-3 h-3 rounded-full mr-2", statusColors.todo)}></div>
+                <h3 className="font-medium">To Do</h3>
+              </div>
+              <div className="flex items-center">
+                {onSummaryGenerated && (
+                  <QuickSummaryButton 
+                    boardId={boardId} 
+                    onSummaryGenerated={onSummaryGenerated}
+                    disabled={loading || tasks.length === 0}
+                  />
+                )}
+                <span className="bg-background text-muted-foreground px-2 py-1 rounded-full text-xs font-medium ml-1 mr-2">
+                  {tasksByStatus.todo.length}
+                </span>
+                <button
+                  className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-background"
+                  title="Add new task"
+                  onClick={() => {
+                    // Create a temporary task with default values
+                    const newTask = {
+                      id: `temp-${Date.now()}`,
+                      title: "New Task",
+                      description: "Task description",
+                      status: "todo",
+                      priority: "medium",
+                      boardId: Number(boardId),
+                      dueDate: null,
+                      assignee: null,
+                      createdAt: new Date(),
+                      emailSource: null
+                    } as unknown as Task;
+                    onTaskClick(newTask as Task);
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                </button>
               </div>
             </div>
             
-            {/* In Progress Column */}
-            <div className="kanban-column mr-4 flex-shrink-0">
-              <div className="bg-muted rounded-md p-4 w-80">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center">
-                    <div className={cn("w-3 h-3 rounded-full mr-2", statusColors.inprogress)}></div>
-                    <h3 className="font-medium">In Progress</h3>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="bg-background text-muted-foreground px-2 py-1 rounded-full text-xs font-medium mr-2">
-                      {tasksByStatus.inprogress.length}
-                    </span>
-                    <button
-                      className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-background"
-                      title="Add new task"
-                      onClick={() => {
-                        // Create a temporary task with default values
-                        const newTask = {
-                          id: `temp-${Date.now()}`,
-                          title: "New Task",
-                          description: "Task description",
-                          status: "inprogress",
-                          priority: "medium",
-                          boardId: Number(boardId),
-                          dueDate: null,
-                          assignee: null,
-                          createdAt: new Date(),
-                          emailSource: null
-                        } as unknown as Task;
-                        onTaskClick(newTask);
-                      }}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 5v14M5 12h14" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-                
-                {/* Task Cards */}
-                <div className="space-y-3">
-                  {loading ? (
-                    // Skeleton loader
-                    Array.from({ length: 2 }).map((_, i) => (
-                      <div key={i} className="bg-white rounded-md shadow-sm p-4">
-                        <Skeleton className="h-6 w-3/4 mb-3" />
-                        <Skeleton className="h-4 w-full mb-2" />
-                        <Skeleton className="h-4 w-2/3 mb-3" />
-                        <div className="flex justify-between items-center">
-                          <Skeleton className="h-4 w-1/4" />
-                          <Skeleton className="h-8 w-8 rounded-full" />
-                        </div>
-                      </div>
-                    ))
-                  ) : tasksByStatus.inprogress.length > 0 ? (
-                    tasksByStatus.inprogress.map((task) => (
-                      <TaskCard 
-                        key={task.id} 
-                        task={task} 
-                        onClick={() => onTaskClick(task)}
-                        onStatusChange={handleTaskStatusChange}
-                      />
-                    ))
-                  ) : (
-                    <div className="bg-white rounded-md shadow-sm p-4 text-center text-muted-foreground">
-                      No tasks in progress
+            {/* Task Cards */}
+            <div className="space-y-3">
+              {loading ? (
+                // Skeleton loader
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="bg-white rounded-md shadow-sm p-4">
+                    <Skeleton className="h-6 w-3/4 mb-3" />
+                    <Skeleton className="h-4 w-full mb-2" />
+                    <Skeleton className="h-4 w-2/3 mb-3" />
+                    <div className="flex justify-between items-center">
+                      <Skeleton className="h-4 w-1/4" />
+                      <Skeleton className="h-8 w-8 rounded-full" />
                     </div>
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            {/* Completed Column */}
-            <div className="kanban-column flex-shrink-0">
-              <div className="bg-muted rounded-md p-4 w-80">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center">
-                    <div className={cn("w-3 h-3 rounded-full mr-2", statusColors.completed)}></div>
-                    <h3 className="font-medium">Completed</h3>
                   </div>
-                  <div className="flex items-center">
-                    <span className="bg-background text-muted-foreground px-2 py-1 rounded-full text-xs font-medium mr-2">
-                      {tasksByStatus.completed.length}
-                    </span>
-                    <button
-                      className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-background"
-                      title="Add new task"
-                      onClick={() => {
-                        // Create a temporary task with default values
-                        const newTask = {
-                          id: `temp-${Date.now()}`,
-                          title: "New Task",
-                          description: "Task description",
-                          status: "completed",
-                          priority: "medium",
-                          boardId: Number(boardId),
-                          dueDate: null,
-                          assignee: null,
-                          createdAt: new Date(),
-                          emailSource: null
-                        } as unknown as Task;
-                        onTaskClick(newTask);
-                      }}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 5v14M5 12h14" />
-                      </svg>
-                    </button>
-                  </div>
+                ))
+              ) : tasksByStatus.todo.length > 0 ? (
+                tasksByStatus.todo.map((task) => (
+                  <TaskCard 
+                    key={task.id} 
+                    task={task} 
+                    onClick={() => onTaskClick(task)}
+                    onStatusChange={handleTaskStatusChange}
+                  />
+                ))
+              ) : (
+                <div className="bg-white rounded-md shadow-sm p-4 text-center text-muted-foreground">
+                  No tasks to do
                 </div>
-                
-                {/* Task Cards */}
-                <div className="space-y-3">
-                  {loading ? (
-                    // Skeleton loader
-                    Array.from({ length: 2 }).map((_, i) => (
-                      <div key={i} className="bg-white rounded-md shadow-sm p-4">
-                        <Skeleton className="h-6 w-3/4 mb-3" />
-                        <Skeleton className="h-4 w-full mb-2" />
-                        <Skeleton className="h-4 w-2/3 mb-3" />
-                        <div className="flex justify-between items-center">
-                          <Skeleton className="h-4 w-1/4" />
-                          <Skeleton className="h-8 w-8 rounded-full" />
-                        </div>
-                      </div>
-                    ))
-                  ) : tasksByStatus.completed.length > 0 ? (
-                    tasksByStatus.completed.map((task) => (
-                      <TaskCard 
-                        key={task.id} 
-                        task={task} 
-                        onClick={() => onTaskClick(task)}
-                        onStatusChange={handleTaskStatusChange}
-                      />
-                    ))
-                  ) : (
-                    <div className="bg-white rounded-md shadow-sm p-4 text-center text-muted-foreground">
-                      No completed tasks
-                    </div>
-                  )}
-                </div>
-              </div>
+              )}
             </div>
           </div>
-        </TabsContent>
+        </div>
         
-        <TabsContent value="dependencies" className="mt-0">
-          <TaskDependencyGraph boardId={boardId} height={500} />
-        </TabsContent>
-      </Tabs>
+        {/* In Progress Column */}
+        <div className="kanban-column mr-4 flex-shrink-0">
+          <div className="bg-muted rounded-md p-4 w-80">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <div className={cn("w-3 h-3 rounded-full mr-2", statusColors.inprogress)}></div>
+                <h3 className="font-medium">In Progress</h3>
+              </div>
+              <div className="flex items-center">
+                <span className="bg-background text-muted-foreground px-2 py-1 rounded-full text-xs font-medium mr-2">
+                  {tasksByStatus.inprogress.length}
+                </span>
+                <button
+                  className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-background"
+                  title="Add new task"
+                  onClick={() => {
+                    // Create a temporary task with default values
+                    const newTask = {
+                      id: `temp-${Date.now()}`,
+                      title: "New Task",
+                      description: "Task description",
+                      status: "inprogress",
+                      priority: "medium",
+                      boardId: Number(boardId),
+                      dueDate: null,
+                      assignee: null,
+                      createdAt: new Date(),
+                      emailSource: null
+                    } as unknown as Task;
+                    onTaskClick(newTask);
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            {/* Task Cards */}
+            <div className="space-y-3">
+              {loading ? (
+                // Skeleton loader
+                Array.from({ length: 2 }).map((_, i) => (
+                  <div key={i} className="bg-white rounded-md shadow-sm p-4">
+                    <Skeleton className="h-6 w-3/4 mb-3" />
+                    <Skeleton className="h-4 w-full mb-2" />
+                    <Skeleton className="h-4 w-2/3 mb-3" />
+                    <div className="flex justify-between items-center">
+                      <Skeleton className="h-4 w-1/4" />
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                    </div>
+                  </div>
+                ))
+              ) : tasksByStatus.inprogress.length > 0 ? (
+                tasksByStatus.inprogress.map((task) => (
+                  <TaskCard 
+                    key={task.id} 
+                    task={task} 
+                    onClick={() => onTaskClick(task)}
+                    onStatusChange={handleTaskStatusChange}
+                  />
+                ))
+              ) : (
+                <div className="bg-white rounded-md shadow-sm p-4 text-center text-muted-foreground">
+                  No tasks in progress
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        {/* Completed Column */}
+        <div className="kanban-column flex-shrink-0">
+          <div className="bg-muted rounded-md p-4 w-80">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <div className={cn("w-3 h-3 rounded-full mr-2", statusColors.completed)}></div>
+                <h3 className="font-medium">Completed</h3>
+              </div>
+              <div className="flex items-center">
+                <span className="bg-background text-muted-foreground px-2 py-1 rounded-full text-xs font-medium mr-2">
+                  {tasksByStatus.completed.length}
+                </span>
+                <button
+                  className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-background"
+                  title="Add new task"
+                  onClick={() => {
+                    // Create a temporary task with default values
+                    const newTask = {
+                      id: `temp-${Date.now()}`,
+                      title: "New Task",
+                      description: "Task description",
+                      status: "completed",
+                      priority: "medium",
+                      boardId: Number(boardId),
+                      dueDate: null,
+                      assignee: null,
+                      createdAt: new Date(),
+                      emailSource: null
+                    } as unknown as Task;
+                    onTaskClick(newTask);
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            {/* Task Cards */}
+            <div className="space-y-3">
+              {loading ? (
+                // Skeleton loader
+                Array.from({ length: 2 }).map((_, i) => (
+                  <div key={i} className="bg-white rounded-md shadow-sm p-4">
+                    <Skeleton className="h-6 w-3/4 mb-3" />
+                    <Skeleton className="h-4 w-full mb-2" />
+                    <Skeleton className="h-4 w-2/3 mb-3" />
+                    <div className="flex justify-between items-center">
+                      <Skeleton className="h-4 w-1/4" />
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                    </div>
+                  </div>
+                ))
+              ) : tasksByStatus.completed.length > 0 ? (
+                tasksByStatus.completed.map((task) => (
+                  <TaskCard 
+                    key={task.id} 
+                    task={task} 
+                    onClick={() => onTaskClick(task)}
+                    onStatusChange={handleTaskStatusChange}
+                  />
+                ))
+              ) : (
+                <div className="bg-white rounded-md shadow-sm p-4 text-center text-muted-foreground">
+                  No completed tasks
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
