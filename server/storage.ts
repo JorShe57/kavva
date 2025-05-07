@@ -1,6 +1,15 @@
-import { users, tasks, taskBoards, type User, type InsertUser, type Task, type InsertTask, type TaskBoard, type InsertTaskBoard } from "@shared/schema";
+import { 
+  users, tasks, taskBoards, 
+  type User, type InsertUser, 
+  type Task, type InsertTask, 
+  type TaskBoard, type InsertTaskBoard,
+  insertTaskSchema, insertTaskBoardSchema, insertUserSchema
+} from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
+import { DbValidator } from "./middleware/db-validator";
+import { NotFoundError } from "./middleware/error-handler";
+import { logger } from "./middleware/logger";
 
 export interface IStorage {
   // User methods
@@ -87,15 +96,38 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createTask(task: InsertTask): Promise<Task> {
-    const result = await db.insert(tasks).values(task).returning();
-    return result[0];
+    const storageLogger = logger.child('storage');
+    
+    return DbValidator.createRecord(
+      insertTaskSchema,
+      task,
+      async (validData: InsertTask) => {
+        storageLogger.info(`Creating task: ${validData.title}`);
+        const result = await db.insert(tasks).values(validData).returning();
+        
+        if (!result.length) {
+          throw new Error('Failed to create task');
+        }
+        
+        storageLogger.info(`Task created with ID: ${result[0].id}`);
+        return result[0];
+      }
+    );
   }
   
   async updateTask(id: string, taskUpdate: Partial<Task>): Promise<Task> {
+    const storageLogger = logger.child('storage');
+    
     // Safely convert id to number
     const taskId = Number(id);
     if (isNaN(taskId)) {
-      throw new Error("Invalid task ID");
+      throw new NotFoundError("Task");
+    }
+    
+    // Check if task exists
+    const existingTask = await this.getTask(id);
+    if (!existingTask) {
+      throw new NotFoundError("Task");
     }
     
     // Ensure completedAt is a valid Date object
@@ -103,22 +135,57 @@ export class DatabaseStorage implements IStorage {
       taskUpdate.completedAt = new Date(taskUpdate.completedAt);
     }
     
-    const result = await db
-      .update(tasks)
-      .set(taskUpdate)
-      .where(eq(tasks.id, taskId))
-      .returning();
-    return result[0];
+    // Create a partial schema that only requires the fields that are being updated
+    const partialTaskSchema = insertTaskSchema.partial();
+    
+    return DbValidator.updateRecord(
+      partialTaskSchema,
+      taskUpdate,
+      async (validData: Partial<Task>) => {
+        storageLogger.info(`Updating task ${taskId}`);
+        
+        const result = await db
+          .update(tasks)
+          .set(validData)
+          .where(eq(tasks.id, taskId))
+          .returning();
+        
+        if (!result.length) {
+          throw new NotFoundError("Task");
+        }
+        
+        storageLogger.info(`Task ${taskId} updated successfully`);
+        return result[0];
+      }
+    );
   }
   
   async deleteTask(id: string): Promise<void> {
-    // Safely convert id to number
-    const taskId = Number(id);
-    if (isNaN(taskId)) {
-      throw new Error("Invalid task ID");
-    }
+    const storageLogger = logger.child('storage');
     
-    await db.delete(tasks).where(eq(tasks.id, taskId));
+    return DbValidator.deleteRecord(
+      id,
+      async (taskId: string) => {
+        // Safely convert id to number
+        const parsedTaskId = Number(taskId);
+        if (isNaN(parsedTaskId)) {
+          throw new NotFoundError("Task");
+        }
+        
+        // Check if task exists
+        const existingTask = await this.getTask(taskId);
+        if (!existingTask) {
+          throw new NotFoundError("Task");
+        }
+        
+        storageLogger.info(`Deleting task ${parsedTaskId}`);
+        
+        await db.delete(tasks).where(eq(tasks.id, parsedTaskId));
+        
+        storageLogger.info(`Task ${parsedTaskId} deleted successfully`);
+      },
+      "Task"
+    );
   }
 }
 
