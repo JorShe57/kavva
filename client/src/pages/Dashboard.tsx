@@ -100,6 +100,13 @@ export default function Dashboard() {
   useEffect(() => {
     if (!loading && !user) {
       navigate("/login");
+      return;
+    }
+    // Set active board from URL if present
+    const path = window.location.pathname;
+    const boardMatch = path.match(/^\/board\/(\d+)$/);
+    if (boardMatch) {
+      setActiveBoard(boardMatch[1]);
     }
   }, [loading, user, navigate]);
 

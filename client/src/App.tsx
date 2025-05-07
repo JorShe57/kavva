@@ -40,3 +40,26 @@ function App() {
 }
 
 export default App;
+import { Route, Switch } from "wouter";
+import Dashboard from "./pages/Dashboard";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import UserProfile from "./pages/UserProfile";
+import Analytics from "./pages/Analytics";
+import Integrations from "./pages/Integrations";
+import NotFound from "./pages/not-found";
+
+export default function App() {
+  return (
+    <Switch>
+      <Route path="/" component={Dashboard} />
+      <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
+      <Route path="/profile" component={UserProfile} />
+      <Route path="/analytics" component={Analytics} />
+      <Route path="/integrations" component={Integrations} />
+      <Route path="/board/:id" component={Dashboard} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
