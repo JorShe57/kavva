@@ -313,8 +313,12 @@ export default function Dashboard() {
                 
                 <button 
                   className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-                  onClick={handleSummarizeTasks}
-                  disabled={!activeBoard || tasks.length === 0}
+                  onClick={() => {
+                    const summarySection = document.getElementById('task-summary-processor');
+                    if (summarySection) {
+                      summarySection.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
                 >
                   <Sparkles className="w-5 h-5 mr-2" />
                   <span>AI Summary</span>
@@ -334,6 +338,14 @@ export default function Dashboard() {
           
           <div id="email-processor" className="mt-8">
             <EmailProcessor onSubmit={handleProcessEmail} boards={boards as TaskBoardType[]} />
+          </div>
+          
+          <div id="task-summary-processor" className="mt-8">
+            <TaskSummaryProcessor 
+              onSubmit={handleSummarizeTasks} 
+              boards={boards as TaskBoardType[]} 
+              disabled={isSummarizing}
+            />
           </div>
         </main>
       </div>
