@@ -9,7 +9,22 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Send, ListChecks, Lightbulb, FileText, CheckCircle, Info, Bot, TerminalSquare } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Send, 
+  ListChecks, 
+  Lightbulb, 
+  FileText, 
+  CheckCircle, 
+  Info, 
+  Bot, 
+  ExternalLink,
+  Clock,
+  Calendar,
+  PlusCircle,
+  Link as LinkIcon
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
@@ -414,9 +429,9 @@ I can help you with recommendations, research, draft emails, or even complete si
                 {allTasks?.map((t) => (
                   <Button
                     key={t.id}
-                    variant={activeTaskId === t.id ? "default" : "ghost"}
+                    variant={activeTaskId === t.id.toString() ? "default" : "ghost"}
                     className="w-full justify-start text-left h-auto py-2 px-3"
-                    onClick={() => handleTaskSelection(t.id)}
+                    onClick={() => handleTaskSelection(t.id.toString())}
                   >
                     <div>
                       <div className="font-medium truncate">{t.title}</div>
@@ -562,12 +577,51 @@ I can help you with recommendations, research, draft emails, or even complete si
             
             {/* Task Steps Tab */}
             <TabsContent value="steps" className="flex-1 flex flex-col m-0 border-none">
+              {task && (
+                <div className="flex items-center justify-between p-3 border-b">
+                  <div className="space-y-1">
+                    <h4 className="font-medium text-sm">Task Completion</h4>
+                    <div className="flex items-center gap-2">
+                      <Progress value={taskProgress} className="w-32 h-2" />
+                      <span className="text-xs text-muted-foreground">{Math.round(taskProgress)}%</span>
+                    </div>
+                  </div>
+                  <Badge variant={task.status === "completed" ? "default" : "outline"}>
+                    {task.status}
+                  </Badge>
+                </div>
+              )}
+              
+              <div className="p-3 border-b">
+                <div className="flex space-x-2">
+                  <Input
+                    placeholder="Add a custom step..."
+                    value={customStepInput}
+                    onChange={(e) => setCustomStepInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && customStepInput.trim()) {
+                        e.preventDefault();
+                        addCustomStep();
+                      }
+                    }}
+                  />
+                  <Button 
+                    size="sm"
+                    variant="secondary"
+                    onClick={addCustomStep}
+                    disabled={!customStepInput.trim()}
+                  >
+                    <PlusCircle className="h-4 w-4 mr-1" /> Add
+                  </Button>
+                </div>
+              </div>
+              
               <ScrollArea className="flex-1 p-4">
                 <div className="space-y-3">
                   {taskSteps.map((step, index) => (
                     <div 
                       key={index} 
-                      className="flex items-start space-x-2 p-2 rounded border bg-background cursor-pointer"
+                      className="flex items-start space-x-2 p-3 rounded-md border bg-background hover:bg-accent/50 cursor-pointer transition-colors"
                       onClick={() => toggleStepCompletion(index)}
                     >
                       <div className={`flex-shrink-0 h-6 w-6 rounded-full flex items-center justify-center border ${
@@ -577,11 +631,26 @@ I can help you with recommendations, research, draft emails, or even complete si
                           <CheckCircle className="h-4 w-4 text-primary-foreground" />
                         )}
                       </div>
-                      <div className={`flex-1 ${completedSteps.has(index) ? "line-through text-muted-foreground" : ""}`}>
-                        {step}
+                      <div className="flex-1">
+                        <div className={`${completedSteps.has(index) ? "line-through text-muted-foreground" : ""}`}>
+                          {step}
+                        </div>
+                        {completedSteps.has(index) && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Completed
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
+                  
+                  {taskSteps.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <ListChecks className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                      <p>No steps defined yet</p>
+                      <p className="text-sm">Add a custom step or select a task to get started</p>
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
             </TabsContent>
@@ -599,19 +668,66 @@ I can help you with recommendations, research, draft emails, or even complete si
               <div className="p-4 space-y-6">
                 <div>
                   <h4 className="font-semibold mb-2">Details</h4>
-                  <div className="space-y-1 text-sm">
-                    <p><span className="text-muted-foreground">Status:</span> {task.status}</p>
-                    <p><span className="text-muted-foreground">Priority:</span> {task.priority}</p>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={task.priority === "high" ? "destructive" : 
+                                     task.priority === "medium" ? "default" : "secondary"}>
+                        {task.priority}
+                      </Badge>
+                      <Badge variant="outline">{task.status}</Badge>
+                    </div>
+                    
                     {task.dueDate && (
-                      <p><span className="text-muted-foreground">Due:</span> {new Date(task.dueDate).toLocaleDateString()}</p>
+                      <div className="flex items-center text-muted-foreground">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
+                      </div>
+                    )}
+                    
+                    {task.assignee && (
+                      <div className="flex items-center text-muted-foreground">
+                        <Avatar className="h-4 w-4 mr-2">
+                          <AvatarFallback className="text-[8px]">{task.assignee.substring(0, 2).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <span>Assigned to: {task.assignee}</span>
+                      </div>
                     )}
                   </div>
                 </div>
                 
                 <div>
                   <h4 className="font-semibold mb-2">Description</h4>
-                  <p className="text-sm whitespace-pre-wrap">{task.description}</p>
+                  <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-md">{task.description}</p>
                 </div>
+                
+                {linkedTasks.length > 0 && (
+                  <>
+                    <Separator />
+                    <div>
+                      <div className="flex items-center mb-2">
+                        <LinkIcon className="h-4 w-4 mr-2 text-blue-500" />
+                        <h4 className="font-semibold">Related Tasks</h4>
+                      </div>
+                      <div className="space-y-2">
+                        {linkedTasks.map((relatedTask) => (
+                          <Button
+                            key={relatedTask.id}
+                            variant="outline"
+                            className="w-full justify-start text-left h-auto py-2 px-3"
+                            onClick={() => handleTaskSelection(relatedTask.id.toString())}
+                          >
+                            <div>
+                              <div className="font-medium text-sm truncate">{relatedTask.title}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {relatedTask.status} • {relatedTask.priority}
+                              </div>
+                            </div>
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
                 
                 <Separator />
                 
@@ -628,6 +744,32 @@ I can help you with recommendations, research, draft emails, or even complete si
                     ))}
                   </div>
                 </div>
+                
+                {relatedResources.length > 0 && (
+                  <>
+                    <Separator />
+                    <div>
+                      <div className="flex items-center mb-2">
+                        <ExternalLink className="h-4 w-4 mr-2 text-blue-500" />
+                        <h4 className="font-semibold">Related Resources</h4>
+                      </div>
+                      <div className="space-y-2">
+                        {relatedResources.map((resource, index) => (
+                          <a 
+                            key={index} 
+                            href={resource.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="flex items-center p-2 text-sm bg-muted rounded-md hover:bg-accent group"
+                          >
+                            <span className="flex-1 truncate">{resource.title}</span>
+                            <ExternalLink className="h-3 w-3 opacity-50 group-hover:opacity-100" />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               <div className="p-4 text-center text-muted-foreground">
