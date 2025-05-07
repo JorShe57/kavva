@@ -1,0 +1,79 @@
+Failed to complete task: 
+Error {}
+message: "500: {"message":"Failed to update task","error":"value.toISOString is not a function"}"
+stack: "Error: 500: {"message":"Failed to update task","error":"value.toISOString is not a function"}↵ at throwIfResNotOk (https://3c95c69c-0add-4375-875d-3cf312f26353-00-sv20e4d87p16.riker.replit.dev/src/lib/queryClient.ts:5:11)↵ at async apiRequest (https://3c95c69c-0add-4375-875d-3cf312f26353-00-sv20e4d87p16.riker.replit.dev/src/lib/queryClient.ts:15:3)↵ at async handleMarkComplete (https://3c95c69c-0add-4375-875d-3cf312f26353-00-sv20e4d87p16.riker.replit.dev/src/components/kanban/TaskActionButton.tsx:40:27)"
+get stack: ƒ ()
+length: 0
+name: ""
+[[Prototype]]: ƒ ()
+apply: ƒ apply()
+arguments: "'caller', 'callee', and 'arguments' properties may not be accessed on strict mode functions or the arguments objects for calls to them"
+get arguments: ƒ ()
+set arguments: ƒ ()
+bind: ƒ bind()
+call: ƒ call()
+caller: "'caller', 'callee', and 'arguments' properties may not be accessed on strict mode functions or the arguments objects for calls to them"
+get caller: ƒ ()
+set caller: ƒ ()
+constructor: ƒ Function()
+length: 0
+name: ""
+toString: ƒ toString()
+Symbol(Symbol.hasInstance): undefined
+[[Prototype]]: Object
+constructor: ƒ Function()
+hasOwnProperty: ƒ hasOwnProperty()
+isPrototypeOf: ƒ isPrototypeOf()
+propertyIsEnumerable: ƒ propertyIsEnumerable()
+toLocaleString: ƒ toLocaleString()
+toString: ƒ toString()
+valueOf: ƒ valueOf()
+__defineGetter__: ƒ __defineGetter__()
+__defineSetter__: ƒ __defineSetter__()
+__lookupGetter__: ƒ __lookupGetter__()
+__lookupSetter__: ƒ __lookupSetter__()
+__proto__: ƒ ()
+get __proto__: ƒ get __proto__()
+set __proto__: ƒ set __proto__()
+set stack: ƒ ()
+length: 1
+name: ""
+[[Prototype]]: ƒ ()
+apply: ƒ apply()
+length: 2
+name: "apply"
+[[Prototype]]: ƒ ()
+arguments: "'caller', 'callee', and 'arguments' properties may not be accessed on strict mode functions or the arguments objects for calls to them"
+get arguments: ƒ ()
+set arguments: ƒ ()
+bind: ƒ bind()
+call: ƒ call()
+caller: "'caller', 'callee', and 'arguments' properties may not be accessed on strict mode functions or the arguments objects for calls to them"
+get caller: ƒ ()
+set caller: ƒ ()
+constructor: ƒ Function()
+length: 0
+name: ""
+toString: ƒ toString()
+Symbol(Symbol.hasInstance): undefined
+[[Prototype]]: Object
+constructor: ƒ Function()
+hasOwnProperty: ƒ hasOwnProperty()
+isPrototypeOf: ƒ isPrototypeOf()
+propertyIsEnumerable: ƒ propertyIsEnumerable()
+toLocaleString: ƒ toLocaleString()
+toString: ƒ toString()
+valueOf: ƒ valueOf()
+__defineGetter__: ƒ __defineGetter__()
+__defineSetter__: ƒ __defineSetter__()
+__lookupGetter__: ƒ __lookupGetter__()
+__lookupSetter__: ƒ __lookupSetter__()
+__proto__: ƒ ()
+get __proto__: ƒ get __proto__()
+set __proto__: ƒ set __proto__()
+[[Prototype]]: Object
+constructor: ƒ Error()
+message: "500: {"message":"Failed to update task","error":"value.toISOString is not a function"}"
+name: "Error"
+toString: ƒ toString()
+[[Prototype]]: Object
