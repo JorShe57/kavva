@@ -259,7 +259,7 @@ export async function handleTaskCompleted(userId: number, taskId: string) {
         level: updatedLevel,
         daysStreak: updatedStreak,
         lastActive: now,
-        weeklyStats: weeklyStats
+        weeklyStats: JSON.stringify(weeklyStats) // Ensure weeklyStats is stringified
       })
       .where(eq(userStats.userId, userId))
       .returning();
