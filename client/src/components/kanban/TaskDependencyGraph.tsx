@@ -114,7 +114,7 @@ export default function TaskDependencyGraph({ boardId, height = 400 }: TaskDepen
     const label = node.label;
     const fontSize = 12/globalScale;
     ctx.font = `${fontSize}px Sans-Serif`;
-    
+
     // Background
     const textWidth = ctx.measureText(label).width;
     const bgHeight = fontSize * 1.5;
@@ -126,12 +126,12 @@ export default function TaskDependencyGraph({ boardId, height = 400 }: TaskDepen
     ctx.beginPath();
     ctx.roundRect(node.x - textWidth / 2 - 5, node.y - bgHeight / 2, textWidth + 10, bgHeight, 5);
     ctx.fill();
-    
+
     // Draw border with priority color
     ctx.strokeStyle = borderColor;
     ctx.lineWidth = 2;
     ctx.stroke();
-    
+
     // Draw text
     ctx.fillStyle = '#fff';
     ctx.textAlign = 'center';
@@ -145,7 +145,7 @@ export default function TaskDependencyGraph({ boardId, height = 400 }: TaskDepen
       ctx.beginPath();
       ctx.arc(node.x + textWidth / 2 + 10, node.y, fontSize / 2, 0, 2 * Math.PI);
       ctx.fill();
-      
+
       ctx.fillStyle = '#fff';
       ctx.font = `${fontSize * 0.8}px Sans-Serif`;
       ctx.fillText(nameInitial, node.x + textWidth / 2 + 10, node.y);
@@ -184,22 +184,22 @@ export default function TaskDependencyGraph({ boardId, height = 400 }: TaskDepen
     // Find links where the selected node is the target (these are prerequisites)
     const prerequisiteLinks = graphData.links.filter(link => link.target === selectedNode.id);
     const prerequisiteIds = prerequisiteLinks.map(link => typeof link.source === 'object' ? link.source.id : link.source);
-    
+
     // Find links where the selected node is the source (these are dependents)
     const dependentLinks = graphData.links.filter(link => link.source === selectedNode.id);
     const dependentIds = dependentLinks.map(link => typeof link.target === 'object' ? link.target.id : link.target);
-    
+
     // Get the full node data for each prerequisite and dependent
     const prerequisites = graphData.nodes.filter(node => prerequisiteIds.includes(node.id));
     const dependents = graphData.nodes.filter(node => dependentIds.includes(node.id));
-    
+
     return { prerequisites, dependents };
   }, [selectedNode, graphData]);
 
   // Filter task options to prevent circular dependencies and self-dependencies
   const availableTasks = useMemo(() => {
     if (!tasks || !selectedNode) return [];
-    
+
     // Filter out the selected task itself and any tasks that are already prerequisites
     return tasks.filter((task: any) => 
       task.id !== parseInt(selectedNode.id) && 
@@ -304,9 +304,16 @@ export default function TaskDependencyGraph({ boardId, height = 400 }: TaskDepen
                 ctx.roundRect(node.x - textWidth / 2 - 5, node.y - bgHeight / 2, textWidth + 10, bgHeight, 5);
                 ctx.fill();
               }}
-              linkDirectionalArrowLength={3.5}
+              linkDirectionalArrowLength={5}
               linkDirectionalArrowRelPos={1}
-              linkCurvature={0.25}
+              linkCurvature={0.2}
+              linkColor={() => "#94a3b8"}
+              linkWidth={2}
+              d3Force={{
+                charge: -1000,
+                link: { distance: 100 },
+                center: { strength: 0.05 }
+              }}
               onNodeClick={handleNodeClick}
               cooldownTicks={100}
             />
@@ -327,7 +334,7 @@ export default function TaskDependencyGraph({ boardId, height = 400 }: TaskDepen
               {selectedNode && `Manage dependencies for "${selectedNode.label}"`}
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedNode && (
             <div className="grid gap-4 py-4">
               <div>
@@ -352,7 +359,7 @@ export default function TaskDependencyGraph({ boardId, height = 400 }: TaskDepen
                   <p className="text-sm text-muted-foreground">No prerequisites</p>
                 )}
               </div>
-              
+
               <div>
                 <h3 className="text-sm font-medium mb-2">Tasks that depend on this:</h3>
                 {dependents.length > 0 ? (
@@ -367,7 +374,7 @@ export default function TaskDependencyGraph({ boardId, height = 400 }: TaskDepen
                   <p className="text-sm text-muted-foreground">No dependent tasks</p>
                 )}
               </div>
-              
+
               <div>
                 <h3 className="text-sm font-medium mb-2">Add a prerequisite:</h3>
                 {availableTasks.length > 0 ? (
@@ -399,7 +406,7 @@ export default function TaskDependencyGraph({ boardId, height = 400 }: TaskDepen
               </div>
             </div>
           )}
-          
+
           <DialogFooter>
             <Button onClick={() => setDependencyDialogOpen(false)}>Close</Button>
           </DialogFooter>
