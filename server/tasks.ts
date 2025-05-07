@@ -80,7 +80,7 @@ export function setupTaskRoutes(app: Express) {
       }
       
       // Verify board belongs to user
-      const board = await storage.getBoard(boardId);
+      const board = await storage.getBoard(String(boardId));
       
       if (!board) {
         return res.status(404).json({ message: "Board not found" });
@@ -118,7 +118,7 @@ export function setupTaskRoutes(app: Express) {
       }
       
       // Verify task's board belongs to user
-      const board = await storage.getBoard(task.boardId);
+      const board = await storage.getBoard(String(task.boardId));
       
       if (!board || board.userId !== (req.user as any).id) {
         return res.status(403).json({ message: "Forbidden" });
@@ -146,7 +146,7 @@ export function setupTaskRoutes(app: Express) {
       }
       
       // Verify task's board belongs to user
-      const board = await storage.getBoard(task.boardId);
+      const board = await storage.getBoard(String(task.boardId));
       
       if (!board || board.userId !== (req.user as any).id) {
         return res.status(403).json({ message: "Forbidden" });
@@ -179,7 +179,7 @@ export function setupTaskRoutes(app: Express) {
       }
       
       // Verify board belongs to user
-      const board = await storage.getBoard(boardId);
+      const board = await storage.getBoard(String(boardId));
       
       if (!board) {
         return res.status(404).json({ message: "Board not found" });
