@@ -333,6 +333,13 @@ export default function Dashboard() {
               loading={tasksLoading}
               onTaskClick={setSelectedTask}
               boardId={activeBoard}
+              onSummaryGenerated={(summary) => {
+                setTaskSummary({
+                  ...summary,
+                  taskCount: tasks.length,
+                });
+                setShowSummaryModal(true);
+              }}
             />
           )}
           

@@ -1,21 +1,30 @@
 import { useState } from "react";
 import { Task } from "@shared/schema";
 import TaskCard from "./TaskCard";
+import QuickSummaryButton from "./QuickSummaryButton";
 import { cn, statusColors } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { downloadAsPDF, generateShareableLink } from "@/lib/utils";
+import { TaskSummaryData } from "@/components/modals/TaskSummaryModal";
 
 interface TaskBoardProps {
   tasks: Task[];
   loading: boolean;
   onTaskClick: (task: Task) => void;
   boardId: string;
+  onSummaryGenerated?: (summary: TaskSummaryData) => void;
 }
 
-export default function TaskBoard({ tasks, loading, onTaskClick, boardId }: TaskBoardProps) {
+export default function TaskBoard({ 
+  tasks, 
+  loading, 
+  onTaskClick, 
+  boardId,
+  onSummaryGenerated 
+}: TaskBoardProps) {
   const [showShareOptions, setShowShareOptions] = useState(false);
   
   const tasksByStatus = {
@@ -119,7 +128,14 @@ export default function TaskBoard({ tasks, loading, onTaskClick, boardId }: Task
                 <h3 className="font-medium">To Do</h3>
               </div>
               <div className="flex items-center">
-                <span className="bg-background text-muted-foreground px-2 py-1 rounded-full text-xs font-medium mr-2">
+                {onSummaryGenerated && (
+                  <QuickSummaryButton 
+                    boardId={boardId} 
+                    onSummaryGenerated={onSummaryGenerated}
+                    disabled={loading || tasks.length === 0}
+                  />
+                )}
+                <span className="bg-background text-muted-foreground px-2 py-1 rounded-full text-xs font-medium ml-1 mr-2">
                   {tasksByStatus.todo.length}
                 </span>
                 <button
