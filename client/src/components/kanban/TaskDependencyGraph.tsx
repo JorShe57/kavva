@@ -55,6 +55,32 @@ export default function TaskDependencyGraph({ boardId, height = 400 }: TaskDepen
     queryKey: [`/api/boards/${boardId}/dependency-graph`],
     enabled: !!boardId,
   });
+  
+  // Process the graph data to ensure links have correct source/target objects
+  const processedGraphData = useMemo(() => {
+    if (!graphData) return null;
+    
+    // Create a node map for quick lookups
+    const nodeMap = new Map();
+    graphData.nodes.forEach(node => {
+      nodeMap.set(node.id, node);
+    });
+    
+    // Process links to ensure they have the correct object references
+    const processedLinks = graphData.links.map(link => {
+      // Convert string IDs to object references
+      return {
+        source: nodeMap.get(link.source) || link.source,
+        target: nodeMap.get(link.target) || link.target,
+        type: link.type
+      };
+    });
+    
+    return {
+      nodes: [...graphData.nodes],
+      links: processedLinks
+    };
+  }, [graphData]);
 
   // Fetch all tasks to select from when adding dependencies
   const { data: tasks } = useQuery({
