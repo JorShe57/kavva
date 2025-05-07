@@ -340,7 +340,8 @@ export default function TaskBoard({
                   <TaskCard 
                     key={task.id} 
                     task={task} 
-                    onClick={() => onTaskClick(task)} 
+                    onClick={() => onTaskClick(task)}
+                    onStatusChange={handleTaskStatusChange}
                   />
                 ))
               ) : (
