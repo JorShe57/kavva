@@ -176,11 +176,16 @@ I can help you with recommendations, research, draft emails, or even complete si
     }
   };
 
-  // Task selection state
+  // Task selection and workspace state
   const [activeTaskId, setActiveTaskId] = useState<string | null>(taskId || null);
   const [workNotes, setWorkNotes] = useState<string>("");
   const [taskSteps, setTaskSteps] = useState<string[]>([]);
   const [taskSuggestions, setTaskSuggestions] = useState<string[]>([]);
+  const [linkedTasks, setLinkedTasks] = useState<Task[]>([]);
+  const [customStepInput, setCustomStepInput] = useState<string>("");
+  const [taskProgress, setTaskProgress] = useState<number>(0);
+  const [relatedResources, setRelatedResources] = useState<{title: string, url: string}[]>([]);
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   
   // Fetch all tasks for task selection
   const { data: allTasks, isLoading: isLoadingAllTasks } = useQuery({
@@ -192,35 +197,168 @@ I can help you with recommendations, research, draft emails, or even complete si
     },
   });
   
-  // Auto-generate notes and suggestions when task is selected
+  // Fetch related tasks
+  const { data: relatedTasksData, isLoading: isLoadingRelatedTasks } = useQuery({
+    queryKey: ["related-tasks", activeTaskId],
+    queryFn: async () => {
+      if (!activeTaskId) return [];
+      // In a real implementation, this would fetch tasks related to the current task
+      // For now, we'll filter tasks that might be related based on title/description similarity
+      
+      if (!allTasks) return [];
+      
+      const activeTask = allTasks.find(t => t.id === Number(activeTaskId));
+      if (!activeTask) return [];
+      
+      // Find tasks that might be related based on keywords in the title or description
+      return allTasks.filter(t => {
+        if (t.id.toString() === activeTaskId) return false;
+        
+        const titleMatch = t.title.toLowerCase().includes(activeTask.title.toLowerCase()) || 
+                          activeTask.title.toLowerCase().includes(t.title.toLowerCase());
+        
+        const descMatch = t.description && activeTask.description && 
+                          (t.description.toLowerCase().includes(activeTask.description.toLowerCase()) || 
+                          activeTask.description.toLowerCase().includes(t.description.toLowerCase()));
+        
+        return titleMatch || descMatch;
+      }).slice(0, 3); // Limit to 3 related tasks
+    },
+    enabled: !!activeTaskId && !!allTasks
+  });
+  
+  // Update linked tasks when related tasks data changes
+  useEffect(() => {
+    if (relatedTasksData) {
+      setLinkedTasks(relatedTasksData);
+    }
+  }, [relatedTasksData]);
+  
+  // Calculate task progress based on completed steps
+  useEffect(() => {
+    if (taskSteps.length === 0) {
+      setTaskProgress(0);
+    } else {
+      const progress = (completedSteps.size / taskSteps.length) * 100;
+      setTaskProgress(progress);
+    }
+  }, [completedSteps, taskSteps]);
+  
+  // Auto-generate notes, suggestions, and resources when task is selected
   useEffect(() => {
     if (task && task.description) {
-      // Auto-generate task steps
-      const defaultSteps = [
-        "Review task requirements and details",
-        "Gather necessary resources and information",
-        "Outline approach and strategy",
-        "Execute the main task components",
-        "Review and refine results"
-      ];
-      setTaskSteps(defaultSteps);
+      // Generate task-specific steps based on task content
+      let generatedSteps: string[] = [];
       
-      // Set initial work notes
-      setWorkNotes(`Working on: ${task.title}\n\nKey details:\n- ${task.description}`);
+      if (task.title.toLowerCase().includes("review") || task.title.toLowerCase().includes("analyze")) {
+        generatedSteps = [
+          "Review task requirements and details",
+          "Identify key points and questions",
+          "Research any unclear concepts",
+          "Analyze findings and note observations",
+          "Compile feedback or recommendations",
+          "Finalize review and submit conclusions"
+        ];
+      } else if (task.title.toLowerCase().includes("create") || task.title.toLowerCase().includes("develop")) {
+        generatedSteps = [
+          "Define requirements and scope",
+          "Research best practices and examples",
+          "Create initial draft or prototype",
+          "Test functionality and gather feedback",
+          "Revise based on feedback",
+          "Finalize and deliver the completed work"
+        ];
+      } else if (task.title.toLowerCase().includes("plan") || task.title.toLowerCase().includes("schedule")) {
+        generatedSteps = [
+          "Define goals and objectives",
+          "Identify required resources and constraints",
+          "Create timeline and milestone schedule",
+          "Assign responsibilities and tasks",
+          "Establish tracking and reporting mechanisms",
+          "Finalize plan and distribute to stakeholders"
+        ];
+      } else {
+        // Default steps
+        generatedSteps = [
+          "Review task requirements and details",
+          "Gather necessary resources and information",
+          "Outline approach and strategy",
+          "Execute the main task components",
+          "Test and validate results",
+          "Finalize and submit completed work"
+        ];
+      }
       
-      // Add some initial suggestions based on task
-      const defaultSuggestions = [
+      setTaskSteps(generatedSteps);
+      
+      // Set initial work notes with enhanced template
+      setWorkNotes(`# Working on: ${task.title}\n\n## Objective\n${task.description || "No description provided"}\n\n## Notes\n- `);
+      
+      // Task-specific suggestions based on task content
+      let suggestions: string[] = [];
+      
+      if (task.priority === "high") {
+        suggestions.push("Focus on this high-priority task before others");
+        suggestions.push("Consider breaking this down into smaller, manageable subtasks");
+      }
+      
+      if (task.dueDate) {
+        const dueDate = new Date(task.dueDate);
+        const today = new Date();
+        const diffTime = dueDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays < 3) {
+          suggestions.push(`Urgent: Only ${diffDays} day${diffDays !== 1 ? 's' : ''} remaining until deadline`);
+        }
+      }
+      
+      // Add general suggestions
+      suggestions = [
+        ...suggestions,
         "Break down this task into smaller components",
         "Research similar approaches or best practices",
-        "Identify potential challenges and solutions",
-        "Create a timeline for completion"
+        "Consider setting milestone deadlines for each step",
+        "Document your progress as you complete each step"
       ];
-      setTaskSuggestions(defaultSuggestions);
+      
+      setTaskSuggestions(suggestions);
+      
+      // Add related resources based on task content
+      let resources: {title: string, url: string}[] = [];
+      
+      if (task.title.toLowerCase().includes("email") || task.description?.toLowerCase().includes("email")) {
+        resources.push({
+          title: "Email Writing Best Practices",
+          url: "https://www.grammarly.com/blog/email-writing-tips/"
+        });
+      }
+      
+      if (task.title.toLowerCase().includes("review") || task.description?.toLowerCase().includes("review")) {
+        resources.push({
+          title: "Effective Code Review Guidelines",
+          url: "https://google.github.io/eng-practices/review/"
+        });
+      }
+      
+      if (task.title.toLowerCase().includes("presentation") || task.description?.toLowerCase().includes("presentation")) {
+        resources.push({
+          title: "Creating Effective Presentations",
+          url: "https://www.skillsyouneed.com/present/presentation-tips.html"
+        });
+      }
+      
+      setRelatedResources(resources);
     }
   }, [task]);
   
-  // Handle step completion
-  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  // Handle adding custom steps
+  const addCustomStep = () => {
+    if (customStepInput.trim()) {
+      setTaskSteps(prev => [...prev, customStepInput]);
+      setCustomStepInput("");
+    }
+  };
   
   const toggleStepCompletion = (index: number) => {
     const updatedSteps = new Set(completedSteps);
