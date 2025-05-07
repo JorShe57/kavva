@@ -48,10 +48,11 @@ export default function Dashboard() {
   // Mutation to create a new board
   const createBoardMutation = useMutation({
     mutationFn: async (title: string) => {
-      return apiRequest('/api/boards', {
-        method: 'POST',
-        body: JSON.stringify({ title }),
-      });
+      return apiRequest(
+        'POST',
+        '/api/boards',
+        { title, userId: user?.id }
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/boards'] });
@@ -94,26 +95,13 @@ export default function Dashboard() {
       }, 300);
       
       // Make the actual API request
-      const response = await fetch('/api/process-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          emailContent,
-          boardId,
-          assignmentOption
-        }),
-        credentials: 'include'
+      const data = await apiRequest('POST', '/api/process-email', {
+        emailContent,
+        boardId,
+        assignmentOption
       });
       
       clearInterval(timer);
-      
-      if (!response.ok) {
-        throw new Error('Failed to process email');
-      }
-      
-      const data = await response.json();
       setProcessingProgress(100);
       
       // Short delay to show 100% completion
@@ -126,28 +114,35 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Error processing email:', error);
       setIsProcessing(false);
+      toast({
+        title: "Error",
+        description: "Failed to process email",
+        variant: "destructive"
+      });
     }
   };
 
   const handleAddTasksToBoard = async (tasks: Task[]) => {
     try {
-      await fetch('/api/tasks/batch', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          tasks: tasks,
-          boardId: activeBoard
-        }),
-        credentials: 'include'
+      await apiRequest('POST', '/api/tasks/batch', {
+        tasks: tasks,
+        boardId: activeBoard
       });
       
       // Invalidate tasks query
       queryClient.invalidateQueries({ queryKey: ['/api/tasks', activeBoard] });
       setShowResultsModal(false);
+      toast({
+        title: "Success",
+        description: "Tasks added to board"
+      });
     } catch (error) {
       console.error('Error adding tasks:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add tasks to board",
+        variant: "destructive"
+      });
     }
   };
 
@@ -177,7 +172,7 @@ export default function Dashboard() {
               <div className="mt-4 md:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                 <button 
                   className="inline-flex items-center justify-center px-4 py-2 border border-primary rounded-md text-primary bg-background hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-                  onClick={() => {/* Add new board functionality would go here */}}
+                  onClick={() => setShowNewBoardDialog(true)}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 5v14M5 12h14" />
@@ -243,6 +238,50 @@ export default function Dashboard() {
         onClose={() => setShowResultsModal(false)}
         onAddTasks={handleAddTasksToBoard}
       />
+      
+      {/* New Board Dialog */}
+      <Dialog open={showNewBoardDialog} onOpenChange={setShowNewBoardDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Board</DialogTitle>
+            <DialogDescription>
+              Enter a name for your new task board.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="board-title" className="text-right">
+                Board Name
+              </Label>
+              <Input
+                id="board-title"
+                value={newBoardTitle}
+                onChange={(e) => setNewBoardTitle(e.target.value)}
+                placeholder="My Task Board"
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="secondary" 
+              onClick={() => setShowNewBoardDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (newBoardTitle.trim() !== '') {
+                  createBoardMutation.mutate(newBoardTitle.trim());
+                }
+              }}
+              disabled={createBoardMutation.isPending || !newBoardTitle.trim()}
+            >
+              {createBoardMutation.isPending ? 'Creating...' : 'Create Board'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
