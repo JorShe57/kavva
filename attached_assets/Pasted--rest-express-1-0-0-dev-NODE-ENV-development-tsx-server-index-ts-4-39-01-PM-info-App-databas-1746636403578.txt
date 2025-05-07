@@ -1,0 +1,441 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+4:39:01 PM [info] [App:database] Establishing database connection...
+4:39:01 PM [info] [App:database] Connection already in progress, waiting...
+4:39:01 PM [info] [App:database] Database connection established successfully
+4:39:01 PM [info] [App] Database connection initialized successfully
+Starting database migration...
+Created achievement_badges table
+Created user_achievements table
+Created user_stats table
+Added completed_at column to tasks table
+Added email column to users table
+Added task dependency columns to tasks table
+Migration completed successfully
+Database migration and achievement initialization completed successfully
+4:39:03 PM [info] [App] Server running on port 5000
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+4:39:07 PM [express] GET /api/auth/me 401 in 4ms :: {"message":"Not authenticated"}
+4:43:08 PM [info] [App:storage] Fetching user with username: jorshevel
+4:43:08 PM [debug] [App:cache] Cache miss for key: user:username:jorshevel, fetching from database
+4:43:09 PM [express] POST /api/auth/login 200 in 818ms :: {"id":2,"username":"jorshevel","email":"jo…
+4:43:09 PM [info] [App:storage] Fetching user with ID: 2
+4:43:09 PM [debug] [App:cache] Cache miss for key: user:2, fetching from database
+4:43:09 PM [info] [App:storage] Fetching user with ID: 2
+4:43:09 PM [debug] [App:cache] Cache hit for key: user:2
+4:43:09 PM [info] [App:storage] Fetching boards for user: 2
+4:43:09 PM [debug] [App:cache] Cache miss for key: boards:user:2, fetching from database
+4:43:09 PM [express] GET /api/boards 304 in 50ms :: [{"id":2,"title":"My Tasks","userId":2,"createdA…
+4:43:40 PM [info] [App:storage] Fetching user with ID: 2
+4:43:40 PM [debug] [App:cache] Cache hit for key: user:2
+Process email request: {
+  emailContentLength: 690,
+  boardId: '3',
+  assignmentOption: 'assignToMe'
+}
+4:43:40 PM [info] [App:storage] Fetching board with ID: 3
+4:43:40 PM [debug] [App:cache] Cache miss for key: board:3, fetching from database
+Starting AI processing of email...
+Processing email with OpenAI...
+Sending request to OpenAI API...
+OpenAI API response: {
+  "tasks": [
+    {
+      "title": "Add 'Our Sod' button",
+      "description": "Add a new button called 'Our Sod' above the Top Soil calculator.",
+      "dueDate": null,
+      "assignee": "jorshevel",
+      "priority": "medium"
+    },
+    {
+      "title": "Create 'Our Sod' page",
+      "description": "Create a new page for the 'Our Sod' button that includes images and descriptions of both sod types.",
+      "dueDate": null,
+      "assignee": "jorshevel",
+      "priority": "medium"
+    },
+    {
+      "title": "Change Top Soil calculator color",
+      "description": "Change the color of the Top Soil calculator to brown or another color from the logo.",
+      "dueDate": null,
+      "assignee": "jorshevel",
+      "priority": "low"
+    },
+    {
+      "title": "Include YardBros SunGold Blend information",
+      "description": "Include the following information for YardBros SunGold Blend: Use in high-visibility areas, full sun, and minimal maintenance. Benefits: disease resistance and soft texture.",
+      "dueDate": null,
+      "assignee": "jorshevel",
+      "priority": "medium"
+    },
+    {
+      "title": "Include YardBros Cool Shade Blend information",
+      "description": "Include the following information for YardBros Cool Shade Blend: Use in shaded areas, cooler climates, and versatile soil types. Benefits: drought tolerance and erosion control.",
+      "dueDate": null,
+      "assignee": "jorshevel",
+      "priority": "medium"
+    }
+  ]
+}
+AI processing completed, extracted tasks: [
+  {
+    title: "Add 'Our Sod' button",
+    description: "Add a new button called 'Our Sod' above the Top Soil calculator.",
+    dueDate: null,
+    assignee: 'jorshevel',
+    priority: 'medium',
+    id: 'temp-1746636240465-454',
+    status: 'todo'
+  },
+  {
+    title: "Create 'Our Sod' page",
+    description: "Create a new page for the 'Our Sod' button that includes images and descriptions of both sod types.",
+    dueDate: null,
+    assignee: 'jorshevel',
+    priority: 'medium',
+    id: 'temp-1746636240465-719',
+    status: 'todo'
+  },
+  {
+    title: 'Change Top Soil calculator color',
+    description: 'Change the color of the Top Soil calculator to brown or another color from the logo.',
+    dueDate: null,
+    assignee: 'jorshevel',
+    priority: 'low',
+    id: 'temp-1746636240465-62',
+    status: 'todo'
+  },
+  {
+    title: 'Include YardBros SunGold Blend information',
+    description: 'Include the following information for YardBros SunGold Blend: Use in high-visibility areas, full sun, and minimal maintenance. Benefits: disease resistance and soft texture.',
+    dueDate: null,
+    assignee: 'jorshevel',
+    priority: 'medium',
+    id: 'temp-1746636240465-438',
+    status: 'todo'
+  },
+  {
+    title: 'Include YardBros Cool Shade Blend information',
+    description: 'Include the following information for YardBros Cool Shade Blend: Use in shaded areas, cooler climates, and versatile soil types. Benefits: drought tolerance and erosion control.',
+    dueDate: null,
+    assignee: 'jorshevel',
+    priority: 'medium',
+    id: 'temp-1746636240465-325',
+    status: 'todo'
+  }
+]
+4:44:00 PM [express] POST /api/process-email 200 in 19915ms :: {"tasks":[{"title":"Add 'Our Sod' but…
+4:44:19 PM [info] [App:storage] Fetching user with ID: 2
+4:44:19 PM [debug] [App:cache] Cache hit for key: user:2
+Received batch task request body: {
+  "tasks": [
+    {
+      "title": "Add 'Our Sod' button",
+      "description": "Add a new button called 'Our Sod' above the Top Soil calculator.",
+      "dueDate": null,
+      "assignee": "jorshevel",
+      "priority": "medium",
+      "status": "todo",
+      "boardId": 3,
+      "emailSource": ""
+    },
+    {
+      "title": "Create 'Our Sod' page",
+      "description": "Create a new page for the 'Our Sod' button that includes images and descriptions of both sod types.",
+      "dueDate": null,
+      "assignee": "jorshevel",
+      "priority": "medium",
+      "status": "todo",
+      "boardId": 3,
+      "emailSource": ""
+    },
+    {
+      "title": "Change Top Soil calculator color",
+      "description": "Change the color of the Top Soil calculator to brown or another color from the logo.",
+      "dueDate": null,
+      "assignee": "jorshevel",
+      "priority": "low",
+      "status": "todo",
+      "boardId": 3,
+      "emailSource": ""
+    },
+    {
+      "title": "Include YardBros SunGold Blend information",
+      "description": "Include the following information for YardBros SunGold Blend: Use in high-visibility areas, full sun, and minimal maintenance. Benefits: disease resistance and soft texture.",
+      "dueDate": null,
+      "assignee": "jorshevel",
+      "priority": "medium",
+      "status": "todo",
+      "boardId": 3,
+      "emailSource": ""
+    },
+    {
+      "title": "Include YardBros Cool Shade Blend information",
+      "description": "Include the following information for YardBros Cool Shade Blend: Use in shaded areas, cooler climates, and versatile soil types. Benefits: drought tolerance and erosion control.",
+      "dueDate": null,
+      "assignee": "jorshevel",
+      "priority": "medium",
+      "status": "todo",
+      "boardId": 3,
+      "emailSource": ""
+    }
+  ],
+  "boardId": 3
+}
+4:44:19 PM [info] [App:storage] Fetching board with ID: 3
+4:44:19 PM [debug] [App:cache] Cache hit for key: board:3
+Creating tasks with board ID: 3
+Creating task: {
+  title: "Add 'Our Sod' button",
+  description: "Add a new button called 'Our Sod' above the Top Soil calculator.",
+  dueDate: null,
+  assignee: 'jorshevel',
+  priority: 'medium',
+  status: 'todo',
+  boardId: 3,
+  emailSource: ''
+}
+4:44:19 PM [info] [App:storage] Creating task: Add 'Our Sod' button
+Creating task: {
+  title: "Create 'Our Sod' page",
+  description: "Create a new page for the 'Our Sod' button that includes images and descriptions of both sod types.",
+  dueDate: null,
+  assignee: 'jorshevel',
+  priority: 'medium',
+  status: 'todo',
+  boardId: 3,
+  emailSource: ''
+}
+4:44:19 PM [info] [App:storage] Creating task: Create 'Our Sod' page
+Creating task: {
+  title: 'Change Top Soil calculator color',
+  description: 'Change the color of the Top Soil calculator to brown or another color from the logo.',
+  dueDate: null,
+  assignee: 'jorshevel',
+  priority: 'low',
+  status: 'todo',
+  boardId: 3,
+  emailSource: ''
+}
+4:44:19 PM [info] [App:storage] Creating task: Change Top Soil calculator color
+Creating task: {
+  title: 'Include YardBros SunGold Blend information',
+  description: 'Include the following information for YardBros SunGold Blend: Use in high-visibility areas, full sun, and minimal maintenance. Benefits: disease resistance and soft texture.',
+  dueDate: null,
+  assignee: 'jorshevel',
+  priority: 'medium',
+  status: 'todo',
+  boardId: 3,
+  emailSource: ''
+}
+4:44:19 PM [info] [App:storage] Creating task: Include YardBros SunGold Blend information
+Creating task: {
+  title: 'Include YardBros Cool Shade Blend information',
+  description: 'Include the following information for YardBros Cool Shade Blend: Use in shaded areas, cooler climates, and versatile soil types. Benefits: drought tolerance and erosion control.',
+  dueDate: null,
+  assignee: 'jorshevel',
+  priority: 'medium',
+  status: 'todo',
+  boardId: 3,
+  emailSource: ''
+}
+4:44:19 PM [info] [App:storage] Creating task: Include YardBros Cool Shade Blend information
+4:44:19 PM [debug] [App:cache] Cleared cache key: tasks:board:3
+4:44:19 PM [info] [App:storage] Task created with ID: 5
+4:44:19 PM [debug] [App:cache] Cleared cache key: tasks:board:3
+4:44:19 PM [info] [App:storage] Task created with ID: 6
+4:44:19 PM [debug] [App:cache] Cleared cache key: tasks:board:3
+4:44:19 PM [info] [App:storage] Task created with ID: 7
+4:44:19 PM [debug] [App:cache] Cleared cache key: tasks:board:3
+4:44:19 PM [info] [App:storage] Task created with ID: 9
+4:44:19 PM [debug] [App:cache] Cleared cache key: tasks:board:3
+4:44:19 PM [info] [App:storage] Task created with ID: 8
+Successfully created tasks: 5
+4:44:19 PM [express] POST /api/tasks/batch 201 in 209ms :: [{"id":5,"title":"Add 'Our Sod' button","…
+4:44:23 PM [info] [App:storage] Fetching user with ID: 2
+4:44:23 PM [debug] [App:cache] Cache hit for key: user:2
+4:44:23 PM [info] [App:storage] Fetching board with ID: 3
+4:44:23 PM [debug] [App:cache] Cache hit for key: board:3
+4:44:23 PM [info] [App:storage] Fetching board with ID: 3
+4:44:23 PM [debug] [App:cache] Cache hit for key: board:3
+4:44:23 PM [info] [App:storage] Fetching tasks for board: 3
+4:44:23 PM [debug] [App:cache] Cache miss for key: tasks:board:3, fetching from database
+4:44:23 PM [express] GET /api/tasks 200 in 30ms :: [{"id":5,"title":"Add 'Our Sod' button","descript…
+4:44:23 PM [info] [App:storage] Fetching user with ID: 2
+4:44:23 PM [debug] [App:cache] Cache hit for key: user:2
+4:44:23 PM [express] GET /api/gamification/stats 304 in 48ms :: {"id":2,"userId":2,"tasksCompleted":…
+4:44:23 PM [info] [App:storage] Fetching user with ID: 2
+4:44:23 PM [debug] [App:cache] Cache hit for key: user:2
+4:44:23 PM [info] [App:storage] Fetching user with ID: 2
+4:44:23 PM [debug] [App:cache] Cache hit for key: user:2
+4:44:23 PM [info] [App:storage] Fetching user with ID: 2
+4:44:23 PM [debug] [App:cache] Cache hit for key: user:2
+4:44:23 PM [express] GET /api/gamification/new-achievements 304 in 39ms :: []
+4:44:23 PM [express] GET /api/gamification/leaderboard 304 in 24ms :: [{"userId":2,"points":40,"leve…
+4:44:23 PM [info] [App:storage] Fetching user with ID: 2
+4:44:23 PM [debug] [App:cache] Cache hit for key: user:2
+4:44:23 PM [express] GET /api/gamification/badges 304 in 26ms :: [{"id":3,"badgeId":1,"earnedAt":"20…
+4:44:23 PM [express] GET /api/gamification/all-badges 304 in 67ms :: [{"id":1,"name":"Task Starter",…
+4:44:32 PM [info] [App:storage] Fetching user with ID: 2
+4:44:32 PM [debug] [App:cache] Cache hit for key: user:2
+4:44:32 PM [info] [App:storage] Fetching board with ID: 3
+4:44:32 PM [debug] [App:cache] Cache hit for key: board:3
+4:44:32 PM [info] [App:storage] Fetching board with ID: 3
+4:44:32 PM [debug] [App:cache] Cache hit for key: board:3
+4:44:32 PM [info] [App:storage] Fetching tasks for board: 3
+4:44:32 PM [debug] [App:cache] Cache hit for key: tasks:board:3
+Generating summary for 5 tasks in board 3...
+Generating AI summary for 5 tasks...
+Sending summary request to OpenAI API...
+OpenAI API summary response received
+Summary generated successfully
+4:44:38 PM [express] POST /api/summarize-tasks 200 in 5698ms :: {"summary":"Jorshevel is tasked with…
+4:45:36 PM [info] [App:storage] Fetching user with ID: 2
+4:45:36 PM [debug] [App:cache] Cache hit for key: user:2
+4:45:36 PM [info] [App:storage] Fetching task with ID: 5
+4:45:36 PM [debug] [App:cache] Cache miss for key: task:5, fetching from database
+4:45:36 PM [info] [App:storage] Fetching board with ID: 3
+4:45:36 PM [debug] [App:cache] Cache hit for key: board:3
+4:45:36 PM [info] [App:storage] Fetching task with ID: 5
+4:45:36 PM [debug] [App:cache] Cache hit for key: task:5
+4:45:36 PM [info] [App:storage] Updating task 5
+4:45:36 PM [debug] [App:cache] Cleared cache key: task:5
+4:45:36 PM [debug] [App:cache] Cleared cache key: tasks:board:3
+4:45:36 PM [info] [App:storage] Task 5 updated successfully
+4:45:36 PM [express] PATCH /api/tasks/5 200 in 138ms :: {"id":5,"title":"Add 'Our Sod' button","desc…
+4:45:36 PM [info] [App:storage] Fetching user with ID: 2
+4:45:36 PM [debug] [App:cache] Cache hit for key: user:2
+4:45:36 PM [info] [App:storage] Fetching task with ID: 5
+4:45:36 PM [debug] [App:cache] Cache miss for key: task:5, fetching from database
+4:45:36 PM [info] [App:storage] Fetching board with ID: 3
+4:45:36 PM [debug] [App:cache] Cache hit for key: board:3
+4:45:36 PM [info] [App:storage] Fetching task with ID: 5
+4:45:36 PM [debug] [App:cache] Cache hit for key: task:5
+4:45:36 PM [info] [App:storage] Fetching task with ID: 5
+4:45:36 PM [debug] [App:cache] Cache hit for key: task:5
+4:45:36 PM [info] [App:storage] Updating task 5
+4:45:36 PM [error] [App:database] Database operation failed after 1 attempts: No values to set
+Failed to trigger task completion: DatabaseError: Database error: No values to set
+    at Function.updateRecord (/home/runner/workspace/server/middleware/db-validator.ts:91:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async handleTaskCompleted (/home/runner/workspace/server/gamification.ts:178:5)
+    at async <anonymous> (/home/runner/workspace/server/gamification-routes.ts:228:28) {
+  statusCode: 500,
+  isOperational: true
+}
+4:45:36 PM [express] POST /api/gamification/trigger-task-completed 500 in 54ms :: {"message":"Failed…
+4:45:39 PM [info] [App:storage] Fetching user with ID: 2
+4:45:39 PM [debug] [App:cache] Cache hit for key: user:2
+4:45:39 PM [info] [App:storage] Fetching task with ID: 6
+4:45:39 PM [debug] [App:cache] Cache miss for key: task:6, fetching from database
+4:45:39 PM [info] [App:storage] Fetching board with ID: 3
+4:45:39 PM [debug] [App:cache] Cache hit for key: board:3
+4:45:39 PM [info] [App:storage] Fetching task with ID: 6
+4:45:39 PM [debug] [App:cache] Cache hit for key: task:6
+4:45:39 PM [info] [App:storage] Updating task 6
+4:45:39 PM [debug] [App:cache] Cleared cache key: task:6
+4:45:39 PM [debug] [App:cache] Cleared cache key: tasks:board:3
+4:45:39 PM [info] [App:storage] Task 6 updated successfully
+4:45:39 PM [express] PATCH /api/tasks/6 200 in 52ms :: {"id":6,"title":"Include YardBros Cool Shade …
+4:45:39 PM [info] [App:storage] Fetching user with ID: 2
+4:45:39 PM [debug] [App:cache] Cache hit for key: user:2
+4:45:39 PM [info] [App:storage] Fetching task with ID: 6
+4:45:39 PM [debug] [App:cache] Cache miss for key: task:6, fetching from database
+4:45:39 PM [info] [App:storage] Fetching board with ID: 3
+4:45:39 PM [debug] [App:cache] Cache hit for key: board:3
+4:45:39 PM [info] [App:storage] Fetching task with ID: 6
+4:45:39 PM [debug] [App:cache] Cache hit for key: task:6
+4:45:39 PM [info] [App:storage] Fetching task with ID: 6
+4:45:39 PM [debug] [App:cache] Cache hit for key: task:6
+4:45:39 PM [info] [App:storage] Updating task 6
+4:45:39 PM [error] [App:database] Database operation failed after 1 attempts: No values to set
+Failed to trigger task completion: DatabaseError: Database error: No values to set
+    at Function.updateRecord (/home/runner/workspace/server/middleware/db-validator.ts:91:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async handleTaskCompleted (/home/runner/workspace/server/gamification.ts:178:5)
+    at async <anonymous> (/home/runner/workspace/server/gamification-routes.ts:228:28) {
+  statusCode: 500,
+  isOperational: true
+}
+4:45:39 PM [express] POST /api/gamification/trigger-task-completed 500 in 47ms :: {"message":"Failed…
+4:45:41 PM [info] [App:storage] Fetching user with ID: 2
+4:45:41 PM [debug] [App:cache] Cache hit for key: user:2
+4:45:41 PM [info] [App:storage] Fetching task with ID: 7
+4:45:41 PM [debug] [App:cache] Cache miss for key: task:7, fetching from database
+4:45:41 PM [info] [App:storage] Fetching board with ID: 3
+4:45:41 PM [debug] [App:cache] Cache hit for key: board:3
+4:45:41 PM [info] [App:storage] Fetching task with ID: 7
+4:45:41 PM [debug] [App:cache] Cache hit for key: task:7
+4:45:41 PM [info] [App:storage] Updating task 7
+4:45:41 PM [debug] [App:cache] Cleared cache key: task:7
+4:45:41 PM [debug] [App:cache] Cleared cache key: tasks:board:3
+4:45:41 PM [info] [App:storage] Task 7 updated successfully
+4:45:41 PM [express] PATCH /api/tasks/7 200 in 51ms :: {"id":7,"title":"Include YardBros SunGold Ble…
+4:45:41 PM [info] [App:storage] Fetching user with ID: 2
+4:45:41 PM [debug] [App:cache] Cache hit for key: user:2
+4:45:41 PM [info] [App:storage] Fetching task with ID: 7
+4:45:41 PM [debug] [App:cache] Cache miss for key: task:7, fetching from database
+4:45:41 PM [info] [App:storage] Fetching board with ID: 3
+4:45:41 PM [debug] [App:cache] Cache hit for key: board:3
+4:45:41 PM [info] [App:storage] Fetching task with ID: 7
+4:45:41 PM [debug] [App:cache] Cache hit for key: task:7
+4:45:41 PM [info] [App:storage] Fetching task with ID: 7
+4:45:41 PM [debug] [App:cache] Cache hit for key: task:7
+4:45:41 PM [info] [App:storage] Updating task 7
+4:45:41 PM [error] [App:database] Database operation failed after 1 attempts: No values to set
+Failed to trigger task completion: DatabaseError: Database error: No values to set
+    at Function.updateRecord (/home/runner/workspace/server/middleware/db-validator.ts:91:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async handleTaskCompleted (/home/runner/workspace/server/gamification.ts:178:5)
+    at async <anonymous> (/home/runner/workspace/server/gamification-routes.ts:228:28) {
+  statusCode: 500,
+  isOperational: true
+}
+4:45:41 PM [express] POST /api/gamification/trigger-task-completed 500 in 53ms :: {"message":"Failed…
+4:45:43 PM [info] [App:storage] Fetching user with ID: 2
+4:45:43 PM [debug] [App:cache] Cache hit for key: user:2
+4:45:43 PM [info] [App:storage] Fetching task with ID: 8
+4:45:43 PM [debug] [App:cache] Cache miss for key: task:8, fetching from database
+4:45:43 PM [info] [App:storage] Fetching board with ID: 3
+4:45:43 PM [debug] [App:cache] Cache hit for key: board:3
+4:45:43 PM [info] [App:storage] Fetching task with ID: 8
+4:45:43 PM [debug] [App:cache] Cache hit for key: task:8
+4:45:43 PM [info] [App:storage] Updating task 8
+4:45:43 PM [debug] [App:cache] Cleared cache key: task:8
+4:45:43 PM [debug] [App:cache] Cleared cache key: tasks:board:3
+4:45:43 PM [info] [App:storage] Task 8 updated successfully
+4:45:43 PM [express] PATCH /api/tasks/8 200 in 49ms :: {"id":8,"title":"Change Top Soil calculator c…
+4:45:43 PM [info] [App:storage] Fetching user with ID: 2
+4:45:43 PM [debug] [App:cache] Cache hit for key: user:2
+4:45:43 PM [info] [App:storage] Fetching task with ID: 8
+4:45:43 PM [debug] [App:cache] Cache miss for key: task:8, fetching from database
+4:45:43 PM [info] [App:storage] Fetching board with ID: 3
+4:45:43 PM [debug] [App:cache] Cache hit for key: board:3
+4:45:43 PM [info] [App:storage] Fetching task with ID: 8
+4:45:43 PM [debug] [App:cache] Cache hit for key: task:8
+4:45:43 PM [info] [App:storage] Fetching task with ID: 8
+4:45:43 PM [debug] [App:cache] Cache hit for key: task:8
+4:45:43 PM [info] [App:storage] Updating task 8
+4:45:43 PM [error] [App:database] Database operation failed after 1 attempts: No values to set
+Failed to trigger task completion: DatabaseError: Database error: No values to set
+    at Function.updateRecord (/home/runner/workspace/server/middleware/db-validator.ts:91:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async handleTaskCompleted (/home/runner/workspace/server/gamification.ts:178:5)
+    at async <anonymous> (/home/runner/workspace/server/gamification-routes.ts:228:28) {
+  statusCode: 500,
+  isOperational: true
+}
+4:45:43 PM [express] POST /api/gamification/trigger-task-completed 500 in 50ms :: {"message":"Failed…
+4:45:45 PM [info] [App:storage] Fetching user with ID: 2
+4:45:45 PM [debug] [App:cache] Cache hit for key: user:2
+4:45:45 PM [info] [App:storage] Fetching board with ID: 2
+4:45:45 PM [debug] [App:cache] Cache miss for key: board:2, fetching from database
+4:45:45 PM [info] [App:storage] Fetching board with ID: 2
+4:45:45 PM [debug] [App:cache] Cache hit for key: board:2
+4:45:45 PM [info] [App:storage] Fetching tasks for board: 2
+4:45:45 PM [debug] [App:cache] Cache miss for key: tasks:board:2, fetching from database
+4:45:45 PM [express] GET /api/tasks 304 in 53ms :: [{"id":4,"title":"Schedule team meeting","descrip…
