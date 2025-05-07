@@ -447,6 +447,40 @@ export function setupTaskRoutes(app: Express) {
       const prerequisiteTask = await storage.getTask(prerequisiteId);
       if (!prerequisiteTask) {
         return res.status(404).json({ message: "Prerequisite task not found" });
+      }
+
+      // Verify tasks' boards belong to user
+      const board = await storage.getBoard(String(task.boardId));
+
+      if (!board || board.userId !== (req.user as any).id) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      // Remove prerequisiteId from task's prerequisiteTaskIds
+      if (task.prerequisiteTaskIds && task.prerequisiteTaskIds.includes(prerequisiteId)) {
+        const updatedPrereqs = task.prerequisiteTaskIds.filter(id => id !== prerequisiteId);
+        await storage.updateTask(taskId, {
+          prerequisiteTaskIds: updatedPrereqs
+        });
+      }
+
+      // Remove taskId from prerequisiteTask's dependentTaskIds
+      if (prerequisiteTask.dependentTaskIds && prerequisiteTask.dependentTaskIds.includes(taskId)) {
+        const updatedDependents = prerequisiteTask.dependentTaskIds.filter(id => id !== taskId);
+        await storage.updateTask(prerequisiteId, {
+          dependentTaskIds: updatedDependents
+        });
+      }
+
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error removing task dependency:", error);
+      res.status(500).json({ 
+        message: "Failed to remove task dependency", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
 
   // Get AI recommendations for a task
   app.get("/api/tasks/:id/recommendations", async (req, res) => {
@@ -483,41 +517,6 @@ export function setupTaskRoutes(app: Express) {
       console.error("Error getting task recommendations:", error);
       res.status(500).json({ 
         message: "Failed to get recommendations", 
-        error: error instanceof Error ? error.message : String(error) 
-      });
-    }
-  });
-
-      }
-
-      // Verify tasks' boards belong to user
-      const board = await storage.getBoard(String(task.boardId));
-
-      if (!board || board.userId !== (req.user as any).id) {
-        return res.status(403).json({ message: "Forbidden" });
-      }
-
-      // Remove prerequisiteId from task's prerequisiteTaskIds
-      if (task.prerequisiteTaskIds && task.prerequisiteTaskIds.includes(prerequisiteId)) {
-        const updatedPrereqs = task.prerequisiteTaskIds.filter(id => id !== prerequisiteId);
-        await storage.updateTask(taskId, {
-          prerequisiteTaskIds: updatedPrereqs
-        });
-      }
-
-      // Remove taskId from prerequisiteTask's dependentTaskIds
-      if (prerequisiteTask.dependentTaskIds && prerequisiteTask.dependentTaskIds.includes(taskId)) {
-        const updatedDependents = prerequisiteTask.dependentTaskIds.filter(id => id !== taskId);
-        await storage.updateTask(prerequisiteId, {
-          dependentTaskIds: updatedDependents
-        });
-      }
-
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error removing task dependency:", error);
-      res.status(500).json({ 
-        message: "Failed to remove task dependency", 
         error: error instanceof Error ? error.message : String(error) 
       });
     }
