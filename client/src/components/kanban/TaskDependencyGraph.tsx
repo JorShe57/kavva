@@ -136,47 +136,60 @@ export default function TaskDependencyGraph({ boardId, height = 400 }: TaskDepen
 
   const width = dimensions?.width || 700;
 
-  const nodeCanvasObject = useCallback((node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-    const label = node.label;
+  const nodeCanvasObject = useCallback((node: GraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
+    const label = node.label || 'Task';
     const fontSize = 12/globalScale;
     ctx.font = `${fontSize}px Sans-Serif`;
 
     // Background
     const textWidth = ctx.measureText(label).width;
     const bgHeight = fontSize * 1.5;
-    const bgColor = statusColors[node.status] || '#888';
-    const borderColor = priorityColors[node.priority] || '#555';
+    const status = node.status || 'todo';
+    const priority = node.priority || 'medium';
+    
+    // Get colors with safeguards
+    let bgColor = '#888';
+    if (status === 'todo') bgColor = statusColors.todo;
+    else if (status === 'inprogress') bgColor = statusColors.inprogress;
+    else if (status === 'completed') bgColor = statusColors.completed;
+    
+    let borderColor = '#555';
+    if (priority === 'high') borderColor = priorityColors.high;
+    else if (priority === 'medium') borderColor = priorityColors.medium;
+    else if (priority === 'low') borderColor = priorityColors.low;
 
     // Draw node background with status color
     ctx.fillStyle = bgColor;
     ctx.beginPath();
-    ctx.roundRect(node.x - textWidth / 2 - 5, node.y - bgHeight / 2, textWidth + 10, bgHeight, 5);
-    ctx.fill();
-
-    // Draw border with priority color
-    ctx.strokeStyle = borderColor;
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Draw text
-    ctx.fillStyle = '#fff';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(label, node.x, node.y);
-
-    // Draw indicators for assignee or due date
-    if (node.assignee) {
-      const nameInitial = node.assignee.charAt(0).toUpperCase();
-      ctx.fillStyle = '#444';
-      ctx.beginPath();
-      ctx.arc(node.x + textWidth / 2 + 10, node.y, fontSize / 2, 0, 2 * Math.PI);
+    if (node.x !== undefined && node.y !== undefined) {
+      ctx.roundRect(node.x - textWidth / 2 - 5, node.y - bgHeight / 2, textWidth + 10, bgHeight, 5);
       ctx.fill();
 
+      // Draw border with priority color
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Draw text
       ctx.fillStyle = '#fff';
-      ctx.font = `${fontSize * 0.8}px Sans-Serif`;
-      ctx.fillText(nameInitial, node.x + textWidth / 2 + 10, node.y);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, node.x, node.y);
+
+      // Draw indicators for assignee or due date
+      if (node.assignee) {
+        const nameInitial = node.assignee.charAt(0).toUpperCase();
+        ctx.fillStyle = '#444';
+        ctx.beginPath();
+        ctx.arc(node.x + textWidth / 2 + 10, node.y, fontSize / 2, 0, 2 * Math.PI);
+        ctx.fill();
+
+        ctx.fillStyle = '#fff';
+        ctx.font = `${fontSize * 0.8}px Sans-Serif`;
+        ctx.fillText(nameInitial, node.x + textWidth / 2 + 10, node.y);
+      }
     }
-  }, []);
+  }, [statusColors, priorityColors]);
 
   const handleNodeClick = useCallback((node: GraphNode) => {
     setSelectedNode(node);
@@ -203,31 +216,46 @@ export default function TaskDependencyGraph({ boardId, height = 400 }: TaskDepen
 
   // Compute current prerequisites and dependents for selected node
   const { prerequisites, dependents } = useMemo(() => {
-    if (!selectedNode || !graphData) {
+    if (!selectedNode || !processedGraphData) {
       return { prerequisites: [], dependents: [] };
     }
 
     // Find links where the selected node is the target (these are prerequisites)
-    const prerequisiteLinks = graphData.links.filter(link => link.target === selectedNode.id);
-    const prerequisiteIds = prerequisiteLinks.map(link => typeof link.source === 'object' ? link.source.id : link.source);
+    const prerequisiteLinks = processedGraphData.links.filter(link => {
+      const targetId = typeof link.target === 'object' ? link.target.id : link.target;
+      return targetId === selectedNode.id;
+    });
+    
+    const prerequisiteIds = prerequisiteLinks.map(link => {
+      return typeof link.source === 'object' ? link.source.id : link.source;
+    });
 
     // Find links where the selected node is the source (these are dependents)
-    const dependentLinks = graphData.links.filter(link => link.source === selectedNode.id);
-    const dependentIds = dependentLinks.map(link => typeof link.target === 'object' ? link.target.id : link.target);
+    const dependentLinks = processedGraphData.links.filter(link => {
+      const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+      return sourceId === selectedNode.id;
+    });
+    
+    const dependentIds = dependentLinks.map(link => {
+      return typeof link.target === 'object' ? link.target.id : link.target;
+    });
 
     // Get the full node data for each prerequisite and dependent
-    const prerequisites = graphData.nodes.filter(node => prerequisiteIds.includes(node.id));
-    const dependents = graphData.nodes.filter(node => dependentIds.includes(node.id));
+    const prerequisites = processedGraphData.nodes.filter(node => prerequisiteIds.includes(node.id));
+    const dependents = processedGraphData.nodes.filter(node => dependentIds.includes(node.id));
 
     return { prerequisites, dependents };
-  }, [selectedNode, graphData]);
+  }, [selectedNode, processedGraphData]);
 
   // Filter task options to prevent circular dependencies and self-dependencies
   const availableTasks = useMemo(() => {
     if (!tasks || !selectedNode) return [];
+    
+    // Make sure tasks is an array
+    const taskArray = Array.isArray(tasks) ? tasks : [];
 
     // Filter out the selected task itself and any tasks that are already prerequisites
-    return tasks.filter((task: any) => 
+    return taskArray.filter((task: any) => 
       task.id !== parseInt(selectedNode.id) && 
       !prerequisites.some(p => p.id === task.id.toString())
     );
@@ -316,32 +344,38 @@ export default function TaskDependencyGraph({ boardId, height = 400 }: TaskDepen
           {hasData ? (
             <ForceGraph2D
               ref={graphRef}
-              graphData={graphData}
+              graphData={processedGraphData || { nodes: [], links: [] }}
               nodeLabel="label"
               width={width}
               height={height}
               nodeCanvasObject={nodeCanvasObject}
-              nodePointerAreaPaint={(node, color, ctx) => {
+              nodePointerAreaPaint={(node: GraphNode, color, ctx) => {
                 const fontSize = 12;
                 ctx.fillStyle = color;
-                const textWidth = ctx.measureText(node.label).width;
+                const label = node.label || 'Task';
+                const textWidth = ctx.measureText(label).width;
                 const bgHeight = fontSize * 1.5;
-                ctx.beginPath();
-                ctx.roundRect(node.x - textWidth / 2 - 5, node.y - bgHeight / 2, textWidth + 10, bgHeight, 5);
-                ctx.fill();
+                
+                if (node.x !== undefined && node.y !== undefined) {
+                  ctx.beginPath();
+                  ctx.roundRect(node.x - textWidth / 2 - 5, node.y - bgHeight / 2, textWidth + 10, bgHeight, 5);
+                  ctx.fill();
+                }
               }}
               linkDirectionalArrowLength={5}
               linkDirectionalArrowRelPos={1}
               linkCurvature={0.2}
               linkColor={() => "#94a3b8"}
               linkWidth={2}
+              onNodeClick={handleNodeClick}
+              cooldownTicks={100}
+              // Apply forces as a configuration object
+              // @ts-ignore - d3Force is available but not in types
               d3Force={{
-                charge: -1000,
+                charge: { strength: -1000 },
                 link: { distance: 100 },
                 center: { strength: 0.05 }
               }}
-              onNodeClick={handleNodeClick}
-              cooldownTicks={100}
             />
           ) : (
             <div className="flex justify-center items-center h-full text-muted-foreground">
