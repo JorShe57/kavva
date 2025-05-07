@@ -5,6 +5,7 @@ import { setupAuthRoutes } from "./auth";
 import { setupTaskRoutes } from "./tasks";
 import { setupGamificationRoutes } from "./gamification-routes";
 import { setupEmailRoutes } from "./email-receiver";
+import { setupAIChatRoutes } from "./ai-chat";
 import { processEmailWithAI } from "./openai";
 import { initializeAchievementBadges } from "./gamification";
 import migrate from "./db-migrate";

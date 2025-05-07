@@ -10,6 +10,7 @@ import Register from "@/pages/Register";
 import UserProfile from "@/pages/UserProfile";
 import Analytics from "@/pages/Analytics";
 import Integrations from "@/pages/Integrations";
+import AIAssistant from "@/pages/AIAssistant";
 import { AuthProvider } from "@/hooks/use-auth";
 
 function Router() {
@@ -21,6 +22,8 @@ function Router() {
       <Route path="/profile" component={UserProfile} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/integrations" component={Integrations} />
+      <Route path="/ai-assistant" component={AIAssistant} />
+      <Route path="/ai-assistant/:taskId" component={AIAssistant} />
       <Route path="/board/:id" component={Dashboard} />
       <Route component={NotFound} />
     </Switch>
