@@ -1,58 +1,104 @@
 import OpenAI from "openai";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || "sk-placeholder-key" });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 interface ProcessEmailOptions {
   assignmentOption: string;
   username: string;
 }
 
-export async function processEmailWithAI(emailContent: string, options: ProcessEmailOptions) {
+interface TaskOutput {
+  id?: string;
+  title: string;
+  description: string;
+  dueDate: string | null;
+  assignee: string | null;
+  priority: string;
+  status: string;
+}
+
+export async function processEmailWithAI(emailContent: string, options: ProcessEmailOptions): Promise<TaskOutput[]> {
   try {
+    if (!emailContent || emailContent.trim() === "") {
+      console.error("No email content provided");
+      return [];
+    }
+
     const { assignmentOption, username } = options;
     
-    const prompt = `
-Extract tasks from the following email content. For each task, provide:
-- Task title (short and actionable)
-- Task description (detailed explanation)
-- Due date (if mentioned, otherwise use a reasonable date based on context)
-- Assignee (if mentioned, otherwise ${assignmentOption === 'assignToMe' ? `assign to "${username}"` : assignmentOption === 'leaveUnassigned' ? 'leave blank' : 'suggest an appropriate assignee'})
-- Priority (high, medium, or low based on urgency indicated in the email)
-- Status (always "todo" for new tasks)
+    const systemPrompt = `
+You are an AI assistant that extracts tasks from emails. Your job is to carefully analyze the email content 
+and identify any tasks, action items, or responsibilities mentioned. Follow these guidelines:
 
-Return the results in JSON format like this:
-[
-  {
-    "id": "temp-1", // Temporary ID that can be replaced by the server
-    "title": "Task title",
-    "description": "Task description",
-    "dueDate": "YYYY-MM-DD",
-    "assignee": "Assignee name",
-    "priority": "high|medium|low",
-    "status": "todo"
-  }
-]
+1. Extract ONLY tasks that need to be done (ignore completed tasks)
+2. Create clear, actionable task titles
+3. Include detailed descriptions with context from the email
+4. Identify due dates when mentioned, or infer reasonable ones from context
+5. Properly assign tasks based on the email context and assignment option
+6. Determine priority based on urgency signals in the email (use "high", "medium", or "low")
+7. Always set status to "todo" for new tasks
+8. If there are no tasks to extract, return an empty array
 
-Email content:
+Your response must be in this exact JSON format:
+{
+  "tasks": [
+    {
+      "title": "Task title here",
+      "description": "Detailed description here",
+      "dueDate": "YYYY-MM-DD",
+      "assignee": "Person name",
+      "priority": "high|medium|low",
+      "status": "todo"
+    }
+  ]
+}
+
+If no tasks are found, return: { "tasks": [] }
+`;
+
+    const userPrompt = `
+Extract all tasks from this email and format them according to the specified JSON structure.
+
+Assignment preference: ${assignmentOption === 'assignToMe' ? `Assign to "${username}"` : assignmentOption === 'leaveUnassigned' ? 'Leave tasks unassigned' : 'Suggest appropriate assignees based on the email'}
+
+EMAIL CONTENT:
 ${emailContent}
 `;
 
+    console.log("Sending email to OpenAI for processing...");
+    
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
-      messages: [{ role: "user", content: prompt }],
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
       response_format: { type: "json_object" },
       temperature: 0.2,
     });
 
-    const result = JSON.parse(response.choices[0].message.content);
-    
-    // Ensure the result is an array
-    if (!Array.isArray(result) && result.tasks && Array.isArray(result.tasks)) {
-      return result.tasks;
+    const content = response.choices[0].message.content;
+    if (!content) {
+      console.error("OpenAI returned empty content");
+      return [];
     }
     
-    return Array.isArray(result) ? result : [];
+    console.log("OpenAI response:", content);
+    
+    const result = JSON.parse(content);
+    
+    // Ensure the result has a tasks array
+    if (result.tasks && Array.isArray(result.tasks)) {
+      return result.tasks.map((task: TaskOutput) => ({
+        ...task,
+        id: `temp-${Date.now()}-${Math.floor(Math.random() * 1000)}`, // Generate unique temporary IDs
+        status: "todo" // Ensure status is set to todo
+      }));
+    }
+    
+    console.warn("OpenAI response did not contain a tasks array");
+    return [];
   } catch (error) {
     console.error("Error calling OpenAI API:", error);
     throw new Error("Failed to process email with AI");
