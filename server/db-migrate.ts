@@ -62,6 +62,17 @@ async function migrate() {
       ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP;
     `);
     console.log("Added completed_at column to tasks table");
+    
+    // Add email column to users table if it doesn't exist
+    await db.execute(sql`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS email TEXT;
+      
+      -- Make email unique (but allow null for existing users)
+      CREATE UNIQUE INDEX IF NOT EXISTS users_email_idx ON users (email)
+      WHERE email IS NOT NULL;
+    `);
+    console.log("Added email column to users table");
 
     console.log("Migration completed successfully");
   } catch (error) {
