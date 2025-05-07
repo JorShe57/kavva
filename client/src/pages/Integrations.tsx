@@ -127,7 +127,7 @@ export default function Integrations() {
                 <IntegrationCard 
                   title="Microsoft Teams"
                   description="Create tasks from Teams messages and chats."
-                  icon={<SiMicrosoft className="w-8 h-8 text-[#6264A7]" />}
+                  icon={<MessageCircle className="w-8 h-8 text-[#6264A7]" />}
                   status="coming_soon"
                   onConnect={() => {}}
                 />
@@ -155,7 +155,7 @@ export default function Integrations() {
                 <IntegrationCard 
                   title="Outlook Calendar"
                   description="Add task deadlines to your Outlook calendar."
-                  icon={<SiMicrosoftoutlook className="w-8 h-8 text-[#0078D4]" />}
+                  icon={<Calendar className="w-8 h-8 text-[#0078D4]" />}
                   status="available"
                   onConnect={() => handleConnectIntegration('Outlook')}
                 />

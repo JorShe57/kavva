@@ -12,9 +12,9 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, PieC
 import { Activity, Calendar, CheckCircle, Clock, Flag, TrendingUp } from "lucide-react";
 
 export default function Analytics() {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const [, navigate] = useLocation();
-  const { stats, loading: statsLoading } = useGamification();
+  const { stats } = useGamification();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
   // Query to fetch boards
@@ -23,12 +23,12 @@ export default function Analytics() {
     enabled: !!user
   });
 
-  // Handle redirection
+  // Handle redirection 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!user) {
       navigate("/login");
     }
-  }, [loading, user, navigate]);
+  }, [user, navigate]);
 
   // Convert weekly stats to chart data
   const weeklyData = stats?.weeklyStats ? Object.entries(stats.weeklyStats).map(([week, data]) => ({
