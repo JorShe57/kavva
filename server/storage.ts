@@ -5,7 +5,7 @@ import {
   type TaskBoard, type InsertTaskBoard,
   insertTaskSchema, insertTaskBoardSchema, insertUserSchema
 } from "@shared/schema";
-import { db } from "./db";
+import { executeDbOperation } from "./db";
 import { eq, and } from "drizzle-orm";
 import { DbValidator } from "./middleware/db-validator";
 import { NotFoundError, DatabaseError } from "./middleware/error-handler";
@@ -42,14 +42,17 @@ export class DatabaseStorage implements IStorage {
       }
       
       storageLogger.info(`Fetching user with ID: ${id}`);
-      const result = await db.select().from(users).where(eq(users.id, id));
       
-      if (result.length === 0) {
-        storageLogger.info(`User not found with ID: ${id}`);
-        return undefined;
-      }
-      
-      return result[0];
+      return await executeDbOperation(async (db) => {
+        const result = await db.select().from(users).where(eq(users.id, id));
+        
+        if (result.length === 0) {
+          storageLogger.info(`User not found with ID: ${id}`);
+          return undefined;
+        }
+        
+        return result[0];
+      });
     } catch (error) {
       storageLogger.error(`Error fetching user: ${error instanceof Error ? error.message : String(error)}`);
       throw new DatabaseError(`Error fetching user: ${error instanceof Error ? error.message : String(error)}`);

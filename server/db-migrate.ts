@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { executeDbOperation } from "./db";
 import { 
   achievementBadges, 
   userAchievements, 
@@ -12,7 +12,8 @@ async function migrate() {
 
   try {
     // Create achievement_badges table
-    await db.execute(sql`
+    await executeDbOperation(async (db) => {
+      await db.execute(sql`
       CREATE TABLE IF NOT EXISTS achievement_badges (
         id SERIAL PRIMARY KEY,
         name TEXT NOT NULL UNIQUE,
@@ -23,11 +24,13 @@ async function migrate() {
         level INTEGER NOT NULL DEFAULT 1,
         created_at TIMESTAMP NOT NULL DEFAULT NOW()
       );
-    `);
+      `);
+    });
     console.log("Created achievement_badges table");
 
     // Create user_achievements table
-    await db.execute(sql`
+    await executeDbOperation(async (db) => {
+      await db.execute(sql`
       CREATE TABLE IF NOT EXISTS user_achievements (
         id SERIAL PRIMARY KEY,
         user_id INTEGER NOT NULL REFERENCES users(id),
@@ -35,11 +38,13 @@ async function migrate() {
         earned_at TIMESTAMP NOT NULL DEFAULT NOW(),
         displayed BOOLEAN NOT NULL DEFAULT FALSE
       );
-    `);
+      `);
+    });
     console.log("Created user_achievements table");
 
     // Create user_stats table
-    await db.execute(sql`
+    await executeDbOperation(async (db) => {
+      await db.execute(sql`
       CREATE TABLE IF NOT EXISTS user_stats (
         id SERIAL PRIMARY KEY,
         user_id INTEGER NOT NULL REFERENCES users(id) UNIQUE,
@@ -53,35 +58,42 @@ async function migrate() {
         points INTEGER NOT NULL DEFAULT 0,
         level INTEGER NOT NULL DEFAULT 1
       );
-    `);
+      `);
+    });
     console.log("Created user_stats table");
 
     // Add completedAt column to tasks table if it doesn't exist
-    await db.execute(sql`
+    await executeDbOperation(async (db) => {
+      await db.execute(sql`
       ALTER TABLE tasks 
       ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP;
-    `);
+      `);
+    });
     console.log("Added completed_at column to tasks table");
     
     // Add email column to users table if it doesn't exist
-    await db.execute(sql`
+    await executeDbOperation(async (db) => {
+      await db.execute(sql`
       ALTER TABLE users 
       ADD COLUMN IF NOT EXISTS email TEXT;
       
       -- Make email unique (but allow null for existing users)
       CREATE UNIQUE INDEX IF NOT EXISTS users_email_idx ON users (email)
       WHERE email IS NOT NULL;
-    `);
+      `);
+    });
     console.log("Added email column to users table");
     
     // Add task dependency columns to tasks table
-    await db.execute(sql`
+    await executeDbOperation(async (db) => {
+      await db.execute(sql`
       ALTER TABLE tasks 
       ADD COLUMN IF NOT EXISTS dependent_task_ids TEXT[] DEFAULT '{}';
       
       ALTER TABLE tasks 
       ADD COLUMN IF NOT EXISTS prerequisite_task_ids TEXT[] DEFAULT '{}';
-    `);
+      `);
+    });
     console.log("Added task dependency columns to tasks table");
 
     console.log("Migration completed successfully");

@@ -11,6 +11,7 @@ import migrate from "./db-migrate";
 import session from "express-session";
 import passport from "passport";
 import path from "path";
+import { logger } from "./middleware/logger";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up session middleware
@@ -44,11 +45,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Run database migrations and initialize achievement badges
   try {
+    // Wait a short time to ensure database connection is established
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Attempt to run migrations
     await migrate();
+    
+    // Initialize achievement badges 
     await initializeAchievementBadges();
+    
     console.log("Database migration and achievement initialization completed successfully");
   } catch (error) {
     console.error("Error during database setup:", error);
+    logger.error(`Database setup error: ${error instanceof Error ? error.message : String(error)}`);
+    // We'll continue even if migration fails - the app can still partially function
   }
 
   // Board routes

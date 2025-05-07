@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { executeDbOperation } from "./db";
 import { storage } from "./storage";
 import { 
   achievementBadges, 
@@ -17,11 +17,14 @@ export interface BadgeResult {
 
 // Initialize default badges if they don't exist
 export async function initializeAchievementBadges() {
-  const existingBadges = await db.select().from(achievementBadges);
+  const existingBadges = await executeDbOperation(async (db) => {
+    return await db.select().from(achievementBadges);
+  });
   
   if (existingBadges.length === 0) {
     // Task completion badges
-    await db.insert(achievementBadges).values([
+    await executeDbOperation(async (db) => {
+      return await db.insert(achievementBadges).values([
       {
         name: "Task Starter",
         description: "Complete your first task",
@@ -127,6 +130,7 @@ export async function initializeAchievementBadges() {
         level: 2
       }
     ]);
+    });
     
     console.log("Achievement badges initialized");
   }
@@ -134,16 +138,20 @@ export async function initializeAchievementBadges() {
 
 // Initialize or get user stats
 export async function initializeUserStats(userId: number): Promise<UserStats> {
-  const [existingStats] = await db.select().from(userStats).where(eq(userStats.userId, userId));
+  const [existingStats] = await executeDbOperation(async (db) => {
+    return await db.select().from(userStats).where(eq(userStats.userId, userId));
+  });
   
   if (existingStats) {
     return existingStats;
   }
   
   // Create new stats for user
-  const [newStats] = await db.insert(userStats)
-    .values({ userId })
-    .returning();
+  const [newStats] = await executeDbOperation(async (db) => {
+    return await db.insert(userStats)
+      .values({ userId })
+      .returning();
+  });
     
   return newStats;
 }
