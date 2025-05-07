@@ -251,18 +251,21 @@ export async function handleTaskCompleted(userId: number, taskId: string) {
   weeklyStats[weekKey].points += pointsEarned;
   
   // Save updates
-  const [updatedStats] = await db.update(userStats)
-    .set({
-      tasksCompleted: updatedTaskCount,
-      highPriorityCompleted: updatedHighPriorityCount,
-      points: updatedPoints,
-      level: updatedLevel,
-      daysStreak: updatedStreak,
-      lastActive: now,
-      weeklyStats: weeklyStats
-    })
-    .where(eq(userStats.userId, userId))
-    .returning();
+  const updatedStats = await executeDbOperation(async (db) => {
+    const [updated] = await db.update(userStats)
+      .set({
+        tasksCompleted: updatedTaskCount,
+        highPriorityCompleted: updatedHighPriorityCount,
+        points: updatedPoints,
+        level: updatedLevel,
+        daysStreak: updatedStreak,
+        lastActive: now,
+        weeklyStats: weeklyStats
+      })
+      .where(eq(userStats.userId, userId))
+      .returning();
+    return updated;
+  });
     
   // Check for achievements
   await checkAndAwardAchievements(userId, updatedStats);
@@ -276,14 +279,17 @@ export async function handleTaskCreated(userId: number) {
   let userStat = await initializeUserStats(userId);
   
   // Update task count
-  const [updatedStats] = await db.update(userStats)
-    .set({
-      tasksCreated: userStat.tasksCreated + 1,
-      lastActive: new Date(),
-      points: userStat.points + 2 // Small points for creating tasks
-    })
-    .where(eq(userStats.userId, userId))
-    .returning();
+  const updatedStats = await executeDbOperation(async (db) => {
+    const [updated] = await db.update(userStats)
+      .set({
+        tasksCreated: userStat.tasksCreated + 1,
+        lastActive: new Date(),
+        points: userStat.points + 2 // Small points for creating tasks
+      })
+      .where(eq(userStats.userId, userId))
+      .returning();
+    return updated;
+  });
     
   return updatedStats;
 }
@@ -294,14 +300,17 @@ export async function handleAITasksGenerated(userId: number, count: number) {
   let userStat = await initializeUserStats(userId);
   
   // Update AI task count
-  const [updatedStats] = await db.update(userStats)
-    .set({
-      aiTasksGenerated: userStat.aiTasksGenerated + count,
-      lastActive: new Date(),
-      points: userStat.points + (5 * count) // Points for using AI features
-    })
-    .where(eq(userStats.userId, userId))
-    .returning();
+  const updatedStats = await executeDbOperation(async (db) => {
+    const [updated] = await db.update(userStats)
+      .set({
+        aiTasksGenerated: userStat.aiTasksGenerated + count,
+        lastActive: new Date(),
+        points: userStat.points + (5 * count) // Points for using AI features
+      })
+      .where(eq(userStats.userId, userId))
+      .returning();
+    return updated;
+  });
     
   // Check AI badges
   await checkAndAwardAchievements(userId, updatedStats);
@@ -313,13 +322,17 @@ export async function handleAITasksGenerated(userId: number, count: number) {
 async function checkAndAwardAchievements(userId: number, stats: UserStats): Promise<BadgeResult[]> {
   const results: BadgeResult[] = [];
   
-  // Get all badges
-  const allBadges = await db.select().from(achievementBadges);
-  
-  // Get user's already earned badges
-  const userBadges = await db.select()
-    .from(userAchievements)
-    .where(eq(userAchievements.userId, userId));
+  // Get all badges and earned badges within a single operation
+  const [allBadges, userBadges] = await Promise.all([
+    executeDbOperation(async (db) => {
+      return await db.select().from(achievementBadges);
+    }),
+    executeDbOperation(async (db) => {
+      return await db.select()
+        .from(userAchievements)
+        .where(eq(userAchievements.userId, userId));
+    })
+  ]);
   
   const earnedBadgeIds = userBadges.map(badge => badge.badgeId);
   
@@ -354,24 +367,27 @@ async function checkAndAwardAchievements(userId: number, stats: UserStats): Prom
     }
     
     if (qualifies) {
-      // Award the badge
-      await db.insert(userAchievements)
-        .values({
-          userId,
-          badgeId: badge.id
-        });
+      // Award the badge and update points in a transaction
+      await executeDbOperation(async (db) => {
+        // Award the badge
+        await db.insert(userAchievements)
+          .values({
+            userId,
+            badgeId: badge.id
+          });
+          
+        // Add points for earning badge (more points for higher level badges)
+        await db.update(userStats)
+          .set({
+            points: stats.points + (badge.level * 25)
+          })
+          .where(eq(userStats.userId, userId));
+      });
       
       results.push({
         earned: true,
         badge
       });
-      
-      // Add points for earning badge (more points for higher level badges)
-      await db.update(userStats)
-        .set({
-          points: stats.points + (badge.level * 25)
-        })
-        .where(eq(userStats.userId, userId));
     }
   }
   
@@ -380,51 +396,56 @@ async function checkAndAwardAchievements(userId: number, stats: UserStats): Prom
 
 // Get newly earned and unviewed badges
 export async function getNewAchievements(userId: number): Promise<UserAchievement[]> {
-  const newAchievements = await db.select()
-    .from(userAchievements)
-    .where(
-      and(
-        eq(userAchievements.userId, userId),
-        eq(userAchievements.displayed, false)
-      )
-    );
-    
-  return newAchievements;
+  return await executeDbOperation(async (db) => {
+    const achievements = await db.select()
+      .from(userAchievements)
+      .where(
+        and(
+          eq(userAchievements.userId, userId),
+          eq(userAchievements.displayed, false)
+        )
+      );
+    return achievements;
+  });
 }
 
 // Mark achievements as displayed
 export async function markAchievementsAsDisplayed(userId: number, achievementIds: number[]) {
-  await db.update(userAchievements)
-    .set({ displayed: true })
-    .where(
-      and(
-        eq(userAchievements.userId, userId),
-        eq(userAchievements.displayed, false)
-      )
-    );
+  await executeDbOperation(async (db) => {
+    await db.update(userAchievements)
+      .set({ displayed: true })
+      .where(
+        and(
+          eq(userAchievements.userId, userId),
+          eq(userAchievements.displayed, false)
+        )
+      );
+  });
 }
 
 // Get all earned badges for a user with badge details
 export async function getUserBadgesWithDetails(userId: number) {
-  const userBadges = await db.select({
-    id: userAchievements.id,
-    badgeId: userAchievements.badgeId,
-    earnedAt: userAchievements.earnedAt,
-    name: achievementBadges.name,
-    description: achievementBadges.description,
-    icon: achievementBadges.icon,
-    type: achievementBadges.type,
-    level: achievementBadges.level
-  })
-  .from(userAchievements)
-  .innerJoin(
-    achievementBadges, 
-    eq(userAchievements.badgeId, achievementBadges.id)
-  )
-  .where(eq(userAchievements.userId, userId))
-  .orderBy(userAchievements.earnedAt);
-  
-  return userBadges;
+  return await executeDbOperation(async (db) => {
+    const userBadges = await db.select({
+      id: userAchievements.id,
+      badgeId: userAchievements.badgeId,
+      earnedAt: userAchievements.earnedAt,
+      name: achievementBadges.name,
+      description: achievementBadges.description,
+      icon: achievementBadges.icon,
+      type: achievementBadges.type,
+      level: achievementBadges.level
+    })
+    .from(userAchievements)
+    .innerJoin(
+      achievementBadges, 
+      eq(userAchievements.badgeId, achievementBadges.id)
+    )
+    .where(eq(userAchievements.userId, userId))
+    .orderBy(userAchievements.earnedAt);
+    
+    return userBadges;
+  });
 }
 
 // Utility function to get the week number
