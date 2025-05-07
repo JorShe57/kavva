@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import cors from "cors";
+import compression from "compression";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler";
 import { logger } from "./middleware/logger";
 
@@ -17,6 +18,20 @@ const corsOptions = {
   maxAge: 86400 // Cache preflight requests for 24 hours
 };
 app.use(cors(corsOptions));
+
+// Compression middleware
+app.use(compression({
+  level: 6, // Balanced between speed and compression ratio
+  threshold: 1024, // Only compress responses larger than 1KB
+  filter: (req, res) => {
+    // Don't compress responses for browsers that don't support it
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    // Use compression by default
+    return compression.filter(req, res);
+  }
+}));
 
 // Body parsing middleware
 app.use(express.json({
