@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { TaskBoard } from "@shared/schema";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Award, Activity, Link2, LogOut, Trophy } from "lucide-react";
+import { LayoutDashboard, Award, Activity, Link2, LogOut, Trophy, Bot } from "lucide-react";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -135,6 +135,20 @@ export default function Sidebar({
                 >
                   <Link2 className="w-5 h-5" />
                   <span>Integrations</span>
+                </Link>
+              </li>
+              
+              <li>
+                <Link 
+                  href="/ai-assistant" 
+                  className={cn(
+                    "flex items-center space-x-3 px-4 py-3",
+                    "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    location.startsWith("/ai-assistant") ? "bg-sidebar-accent text-sidebar-accent-foreground border-r-4 border-sidebar-primary" : ""
+                  )}
+                >
+                  <Bot className="w-5 h-5" />
+                  <span>AI Assistant</span>
                 </Link>
               </li>
             </ul>

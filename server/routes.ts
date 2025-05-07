@@ -102,6 +102,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up email receiver routes
   setupEmailRoutes(app);
   
+  // Set up AI chat routes
+  setupAIChatRoutes(app);
+  
   // Run database migrations and initialize achievement badges
   try {
     // Wait a short time to ensure database connection is established

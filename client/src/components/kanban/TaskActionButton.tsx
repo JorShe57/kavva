@@ -4,13 +4,15 @@ import {
   CheckCircle, 
   RotateCcw, 
   AlertCircle,
-  Loader2
+  Loader2,
+  Bot
 } from "lucide-react";
 import { Task } from "@shared/schema";
 import { useGamification } from "@/hooks/use-gamification";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 
 interface TaskActionButtonProps {
   task: Task;
@@ -21,6 +23,7 @@ export default function TaskActionButton({ task, onStatusChange }: TaskActionBut
   const { triggerTaskCompleted } = useGamification();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
+  const [, setLocation] = useLocation();
   
   // Convert task.id to string once to avoid multiple conversions
   const taskId = String(task.id);
@@ -136,29 +139,59 @@ export default function TaskActionButton({ task, onStatusChange }: TaskActionBut
     );
   }
   
+  // Handle opening the AI assistant for this task
+  const handleCompleteWithAI = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setLocation(`/ai-assistant/${taskId}`);
+  };
+
   if (task.priority === 'high') {
     return (
-      <Button 
-        variant="ghost" 
-        size="sm"
-        onClick={handleMarkComplete} 
-        className="w-full justify-start text-amber-500 hover:text-amber-600 hover:bg-amber-50"
-      >
-        <AlertCircle className="h-4 w-4 mr-2" />
-        Complete High Priority
-      </Button>
+      <div className="space-y-1">
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={handleMarkComplete} 
+          className="w-full justify-start text-amber-500 hover:text-amber-600 hover:bg-amber-50"
+        >
+          <AlertCircle className="h-4 w-4 mr-2" />
+          Complete High Priority
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={handleCompleteWithAI}
+          className="w-full justify-start text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+        >
+          <Bot className="h-4 w-4 mr-2" />
+          Complete with AI
+        </Button>
+      </div>
     );
   }
   
   return (
-    <Button 
-      variant="ghost" 
-      size="sm"
-      onClick={handleMarkComplete}
-      className="w-full justify-start text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-    >
-      <CheckCircle className="h-4 w-4 mr-2" />
-      Mark Complete
-    </Button>
+    <div className="space-y-1">
+      <Button 
+        variant="ghost" 
+        size="sm"
+        onClick={handleMarkComplete}
+        className="w-full justify-start text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+      >
+        <CheckCircle className="h-4 w-4 mr-2" />
+        Mark Complete
+      </Button>
+      
+      <Button 
+        variant="ghost" 
+        size="sm"
+        onClick={handleCompleteWithAI}
+        className="w-full justify-start text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+      >
+        <Bot className="h-4 w-4 mr-2" />
+        Complete with AI
+      </Button>
+    </div>
   );
 }
