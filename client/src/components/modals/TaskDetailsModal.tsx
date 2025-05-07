@@ -19,7 +19,15 @@ interface TaskDetailsModalProps {
 export default function TaskDetailsModal({ task, onClose, onSave }: TaskDetailsModalProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [taskData, setTaskData] = useState<Task>({...task});
+  // Create a properly typed initial state
+  const [taskData, setTaskData] = useState<Task>({
+    ...task,
+    // Ensure string | null types are properly initialized for the form
+    description: task.description || "",
+    assignee: task.assignee || "",
+    emailSource: task.emailSource || null,
+    dueDate: task.dueDate
+  });
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -147,7 +155,7 @@ export default function TaskDetailsModal({ task, onClose, onSave }: TaskDetailsM
             <Textarea 
               id="description" 
               name="description"
-              value={taskData.description}
+              value={taskData.description || ""}
               onChange={handleChange}
               rows={4}
             />

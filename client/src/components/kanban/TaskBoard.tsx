@@ -126,17 +126,19 @@ export default function TaskBoard({ tasks, loading, onTaskClick, boardId }: Task
                   className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-background"
                   title="Add new task"
                   onClick={() => {
+                    // Create a temporary task with default values
                     const newTask = {
                       id: `temp-${Date.now()}`,
                       title: "New Task",
                       description: "Task description",
                       status: "todo",
                       priority: "medium",
-                      boardId,
-                      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-                      createdAt: new Date().toISOString(),
-                      userId: 0 // This will be set by the server
-                    } as Task;
+                      boardId: Number(boardId),
+                      dueDate: null,
+                      assignee: null,
+                      createdAt: new Date(),
+                      emailSource: null
+                    } as unknown as Task;
                     onTaskClick(newTask as Task);
                   }}
                 >
@@ -195,17 +197,19 @@ export default function TaskBoard({ tasks, loading, onTaskClick, boardId }: Task
                   className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-background"
                   title="Add new task"
                   onClick={() => {
+                    // Create a temporary task with default values
                     const newTask = {
                       id: `temp-${Date.now()}`,
                       title: "New Task",
                       description: "Task description",
                       status: "inprogress",
                       priority: "medium",
-                      boardId,
-                      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-                      createdAt: new Date().toISOString(),
-                      userId: 0 // This will be set by the server
-                    } as Task;
+                      boardId: Number(boardId),
+                      dueDate: null,
+                      assignee: null,
+                      createdAt: new Date(),
+                      emailSource: null
+                    } as unknown as Task;
                     onTaskClick(newTask);
                   }}
                 >
@@ -256,9 +260,35 @@ export default function TaskBoard({ tasks, loading, onTaskClick, boardId }: Task
                 <div className={cn("w-3 h-3 rounded-full mr-2", statusColors.completed)}></div>
                 <h3 className="font-medium">Completed</h3>
               </div>
-              <span className="bg-background text-muted-foreground px-2 py-1 rounded-full text-xs font-medium">
-                {tasksByStatus.completed.length}
-              </span>
+              <div className="flex items-center">
+                <span className="bg-background text-muted-foreground px-2 py-1 rounded-full text-xs font-medium mr-2">
+                  {tasksByStatus.completed.length}
+                </span>
+                <button
+                  className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-background"
+                  title="Add new task"
+                  onClick={() => {
+                    // Create a temporary task with default values
+                    const newTask = {
+                      id: `temp-${Date.now()}`,
+                      title: "New Task",
+                      description: "Task description",
+                      status: "completed",
+                      priority: "medium",
+                      boardId: Number(boardId),
+                      dueDate: null,
+                      assignee: null,
+                      createdAt: new Date(),
+                      emailSource: null
+                    } as unknown as Task;
+                    onTaskClick(newTask);
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                </button>
+              </div>
             </div>
             
             {/* Task Cards */}
