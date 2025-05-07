@@ -2,8 +2,10 @@
 import type { Express } from 'express';
 import { storage } from './storage';
 import { processEmailWithAI } from './openai';
-import * as SendGrid from '@sendgrid/mail';
+import { MailService } from '@sendgrid/mail';
 import * as SendGridInbound from '@sendgrid/inbound-mail-parser';
+
+const SendGrid = new MailService();
 
 interface EmailPayload {
   from: string;
