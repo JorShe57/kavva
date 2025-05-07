@@ -114,7 +114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Add the email source to each task
-      const tasksWithSource = extractedTasks.map(task => ({
+      const tasksWithSource = extractedTasks.map((task: any) => ({
         ...task,
         emailSource: emailContent,
         boardId

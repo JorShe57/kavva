@@ -29,6 +29,19 @@ export default function EmailProcessor({ onSubmit, boards }: EmailProcessorProps
       return;
     }
     
+    if (selectedBoard === "new") {
+      // Handle "Create New Board" option
+      const newBoardName = prompt("Enter a name for the new board:");
+      if (!newBoardName || !newBoardName.trim()) {
+        return;
+      }
+      
+      // This would usually create a board first, then use its ID
+      // But for now we'll just alert the user that this feature is coming soon
+      alert("Create new board feature is coming soon. Please select an existing board.");
+      return;
+    }
+    
     onSubmit(emailContent, selectedBoard, assignmentOption);
   };
   
@@ -71,7 +84,7 @@ export default function EmailProcessor({ onSubmit, boards }: EmailProcessorProps
                 </SelectTrigger>
                 <SelectContent>
                   {boards.map((board) => (
-                    <SelectItem key={board.id} value={board.id}>
+                    <SelectItem key={board.id} value={board.id.toString()}>
                       {board.title}
                     </SelectItem>
                   ))}
