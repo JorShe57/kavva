@@ -3,8 +3,36 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { storage } from "./storage";
 import { initializeUserStats } from "./gamification";
+import * as bcrypt from "bcryptjs";
+import { Request, Response, NextFunction } from "express";
+import rateLimit from "express-rate-limit";
 
 export function setupAuthRoutes(app: Express) {
+  // Create rate limiters for auth endpoints
+  const loginRateLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // 5 login attempts per IP per 15 minutes
+    message: { message: "Too many login attempts, please try again later" },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
+  const registerRateLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 3, // 3 registration attempts per IP per hour
+    message: { message: "Too many registration attempts, please try again later" },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
+  // General auth rate limiter for other auth endpoints
+  const authRateLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // 100 requests per IP per 15 minutes
+    message: { message: "Too many requests, please try again later" },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
   // Set up Passport local strategy
   passport.use(
     new LocalStrategy(async (username, password, done) => {
@@ -15,9 +43,9 @@ export function setupAuthRoutes(app: Express) {
           return done(null, false, { message: "Invalid username" });
         }
         
-        // Check if password is correct
-        // For a real app, you would compare hashed passwords here
-        if (password !== user.password) {
+        // Check if password is correct using bcrypt compare
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
           return done(null, false, { message: "Invalid password" });
         }
         
@@ -44,7 +72,7 @@ export function setupAuthRoutes(app: Express) {
   });
   
   // Register route
-  app.post("/api/auth/register", async (req, res, next) => {
+  app.post("/api/auth/register", registerRateLimiter, async (req, res, next) => {
     try {
       const { username, email, password } = req.body;
       
@@ -65,9 +93,15 @@ export function setupAuthRoutes(app: Express) {
         return res.status(409).json({ message: "Username already exists" });
       }
       
-      // Create user
-      // In a real app, you would hash the password before storing it
-      const user = await storage.createUser({ username, email, password });
+      // Hash the password with bcrypt (10 rounds of salting)
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      // Create user with hashed password
+      const user = await storage.createUser({ 
+        username, 
+        email, 
+        password: hashedPassword 
+      });
       
       // Initialize user stats
       await initializeUserStats(user.id);
@@ -91,7 +125,7 @@ export function setupAuthRoutes(app: Express) {
   });
   
   // Login route
-  app.post("/api/auth/login", (req, res, next) => {
+  app.post("/api/auth/login", loginRateLimiter, (req, res, next) => {
     passport.authenticate("local", (err, user, info) => {
       if (err) {
         return next(err);
@@ -111,7 +145,7 @@ export function setupAuthRoutes(app: Express) {
   });
   
   // Logout route
-  app.post("/api/auth/logout", (req, res) => {
+  app.post("/api/auth/logout", authRateLimiter, (req, res) => {
     req.logout((err) => {
       if (err) {
         return res.status(500).json({ message: "Failed to logout" });
@@ -121,7 +155,7 @@ export function setupAuthRoutes(app: Express) {
   });
   
   // Get current user
-  app.get("/api/auth/me", (req, res) => {
+  app.get("/api/auth/me", authRateLimiter, (req, res) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
