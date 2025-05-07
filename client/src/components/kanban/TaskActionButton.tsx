@@ -34,7 +34,15 @@ export default function TaskActionButton({ task, onStatusChange }: TaskActionBut
       const updatedTask = await apiRequest(
         'PATCH',
         `/api/tasks/${taskId}`,
-        { status: 'completed', completedAt: new Date().toISOString() }
+        { 
+          status: 'completed', 
+          completedAt: new Date().toISOString(),
+          title: task.title,
+          description: task.description,
+          priority: task.priority,
+          assignee: task.assignee,
+          boardId: task.boardId
+        }
       ).then(res => res.json());
       
       // Then trigger the gamification event

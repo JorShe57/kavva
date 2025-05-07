@@ -145,7 +145,8 @@ export function setupTaskRoutes(app: Express) {
       const updatedTask = await storage.updateTask(taskId, req.body);
       res.json(updatedTask);
     } catch (error) {
-      res.status(500).json({ message: "Failed to update task" });
+      console.error("Error updating task:", error);
+      res.status(500).json({ message: "Failed to update task", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
