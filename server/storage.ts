@@ -40,7 +40,13 @@ export class DatabaseStorage implements IStorage {
   
   // Task board methods
   async getBoard(id: string): Promise<TaskBoard | undefined> {
-    const result = await db.select().from(taskBoards).where(eq(taskBoards.id, parseInt(id)));
+    // Safely convert id to number, otherwise return undefined
+    const boardId = Number(id);
+    if (isNaN(boardId)) {
+      return undefined;
+    }
+    
+    const result = await db.select().from(taskBoards).where(eq(taskBoards.id, boardId));
     return result[0];
   }
   
@@ -55,12 +61,24 @@ export class DatabaseStorage implements IStorage {
   
   // Task methods
   async getTask(id: string): Promise<Task | undefined> {
-    const result = await db.select().from(tasks).where(eq(tasks.id, parseInt(id)));
+    // Safely convert id to number, otherwise return undefined
+    const taskId = Number(id);
+    if (isNaN(taskId)) {
+      return undefined;
+    }
+    
+    const result = await db.select().from(tasks).where(eq(tasks.id, taskId));
     return result[0];
   }
   
   async getTasksByBoardId(boardId: string): Promise<Task[]> {
-    return db.select().from(tasks).where(eq(tasks.boardId, parseInt(boardId)));
+    // Safely convert id to number, otherwise return empty array
+    const parsedBoardId = Number(boardId);
+    if (isNaN(parsedBoardId)) {
+      return [];
+    }
+    
+    return db.select().from(tasks).where(eq(tasks.boardId, parsedBoardId));
   }
   
   async createTask(task: InsertTask): Promise<Task> {
@@ -69,16 +87,28 @@ export class DatabaseStorage implements IStorage {
   }
   
   async updateTask(id: string, taskUpdate: Partial<Task>): Promise<Task> {
+    // Safely convert id to number
+    const taskId = Number(id);
+    if (isNaN(taskId)) {
+      throw new Error("Invalid task ID");
+    }
+    
     const result = await db
       .update(tasks)
       .set(taskUpdate)
-      .where(eq(tasks.id, parseInt(id)))
+      .where(eq(tasks.id, taskId))
       .returning();
     return result[0];
   }
   
   async deleteTask(id: string): Promise<void> {
-    await db.delete(tasks).where(eq(tasks.id, parseInt(id)));
+    // Safely convert id to number
+    const taskId = Number(id);
+    if (isNaN(taskId)) {
+      throw new Error("Invalid task ID");
+    }
+    
+    await db.delete(tasks).where(eq(tasks.id, taskId));
   }
 }
 

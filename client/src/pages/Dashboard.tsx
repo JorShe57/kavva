@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
@@ -9,11 +9,19 @@ import EmailProcessor from "@/components/email/EmailProcessor";
 import TaskDetailsModal from "@/components/modals/TaskDetailsModal";
 import ProcessingModal from "@/components/modals/ProcessingModal";
 import ResultsModal from "@/components/modals/ResultsModal";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Task, TaskBoard as TaskBoardType } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
   const { user, loading } = useAuth();
   const [, navigate] = useLocation();
+  const { toast } = useToast();
   
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -22,17 +30,45 @@ export default function Dashboard() {
   const [extractedTasks, setExtractedTasks] = useState<Task[]>([]);
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [activeBoard, setActiveBoard] = useState<string | null>(null);
+  const [showNewBoardDialog, setShowNewBoardDialog] = useState(false);
+  const [newBoardTitle, setNewBoardTitle] = useState("");
 
   // Query to fetch boards
-  const { data: boards = [], isLoading: boardsLoading } = useQuery({ 
+  const { data: boards = [], isLoading: boardsLoading } = useQuery<TaskBoardType[]>({ 
     queryKey: ['/api/boards'],
     enabled: !!user
   });
 
   // Query to fetch tasks for the active board
-  const { data: tasks = [], isLoading: tasksLoading } = useQuery({ 
+  const { data: tasks = [], isLoading: tasksLoading } = useQuery<Task[]>({ 
     queryKey: ['/api/tasks', activeBoard],
     enabled: !!activeBoard
+  });
+  
+  // Mutation to create a new board
+  const createBoardMutation = useMutation({
+    mutationFn: async (title: string) => {
+      return apiRequest('/api/boards', {
+        method: 'POST',
+        body: JSON.stringify({ title }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/boards'] });
+      setShowNewBoardDialog(false);
+      setNewBoardTitle('');
+      toast({
+        title: "Success",
+        description: "Board created successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create board",
+        variant: "destructive",
+      });
+    }
   });
 
   // Redirect to login if not authenticated
