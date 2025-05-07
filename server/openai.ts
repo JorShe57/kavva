@@ -43,7 +43,7 @@ const defaultTestTasks = [
     description: "Review the project proposal document before Thursday's meeting",
     dueDate: "2025-05-29", // Thursday
 
-export async function getTaskRecommendations(task: TaskOutput): Promise<{ recommendations: string[], steps: string[] }> {
+export const getTaskRecommendations = async (task: TaskOutput): Promise<{ recommendations: string[], steps: string[] }> => {
   try {
     const systemPrompt = `You are an AI assistant that provides practical recommendations and step-by-step guidance for completing tasks.`;
     
