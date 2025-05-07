@@ -18,15 +18,13 @@ export function setupEmailRoutes(app: express.Express) {
   // Test endpoint
   app.post('/api/email/test', async (req, res) => {
     try {
-      const testEmail = {
+      // For testing, create a simplified email object that matches the expected structure
+      const email = {
         from: { email: req.body.from || 'test@example.com' },
         subject: 'Test Email',
-        text: 'Create two test tasks: 1. Make volunteer application writable 2. Replace volunteer application on website',
+        text: req.body.text || 'Create two test tasks: 1. Make volunteer application writable 2. Replace volunteer application on website',
         html: '<p>Test email content</p>'
       };
-
-      // Process test email like a real one
-      const email = new SendGridInbound.Parse(testEmail);
       const emailPayload = {
         from: email.from.email,
         subject: email.subject,
