@@ -31,12 +31,13 @@ export default function TaskActionButton({ task, onStatusChange }: TaskActionBut
     setIsLoading(true);
     try {
       // First update the task in the database
+      const now = new Date();
       const updatedTask = await apiRequest(
         'PATCH',
         `/api/tasks/${taskId}`,
         { 
           status: 'completed', 
-          completedAt: new Date().toISOString(),
+          completedAt: now,
           title: task.title,
           description: task.description,
           priority: task.priority,

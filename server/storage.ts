@@ -93,6 +93,11 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Invalid task ID");
     }
     
+    // Ensure completedAt is a valid Date object
+    if (taskUpdate.completedAt) {
+      taskUpdate.completedAt = new Date(taskUpdate.completedAt);
+    }
+    
     const result = await db
       .update(tasks)
       .set(taskUpdate)
