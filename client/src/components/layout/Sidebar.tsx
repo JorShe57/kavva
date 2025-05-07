@@ -111,23 +111,31 @@ export default function Sidebar({
               </li>
               
               <li>
-                <a href="#" className={cn(
-                  "flex items-center space-x-3 px-4 py-3", 
-                  "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                )}>
+                <Link 
+                  href="/analytics" 
+                  className={cn(
+                    "flex items-center space-x-3 px-4 py-3",
+                    "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    location === "/analytics" ? "bg-sidebar-accent text-sidebar-accent-foreground border-r-4 border-sidebar-primary" : ""
+                  )}
+                >
                   <Activity className="w-5 h-5" />
                   <span>Analytics</span>
-                </a>
+                </Link>
               </li>
               
               <li>
-                <a href="#" className={cn(
-                  "flex items-center space-x-3 px-4 py-3", 
-                  "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                )}>
+                <Link 
+                  href="/integrations" 
+                  className={cn(
+                    "flex items-center space-x-3 px-4 py-3",
+                    "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    location === "/integrations" ? "bg-sidebar-accent text-sidebar-accent-foreground border-r-4 border-sidebar-primary" : ""
+                  )}
+                >
                   <Link2 className="w-5 h-5" />
                   <span>Integrations</span>
-                </a>
+                </Link>
               </li>
             </ul>
             

@@ -8,6 +8,8 @@ import Dashboard from "@/pages/Dashboard";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import UserProfile from "@/pages/UserProfile";
+import Analytics from "@/pages/Analytics";
+import Integrations from "@/pages/Integrations";
 import { AuthProvider } from "@/hooks/use-auth";
 
 function Router() {
@@ -17,6 +19,8 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/profile" component={UserProfile} />
+      <Route path="/analytics" component={Analytics} />
+      <Route path="/integrations" component={Integrations} />
       <Route component={NotFound} />
     </Switch>
   );
