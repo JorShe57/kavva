@@ -2,7 +2,7 @@ import type { Express } from "express";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { storage } from "./storage";
-import { compare, hash } from "bcrypt";
+import { initializeUserStats } from "./gamification";
 
 export function setupAuthRoutes(app: Express) {
   // Set up Passport local strategy
@@ -67,7 +67,16 @@ export function setupAuthRoutes(app: Express) {
       
       // Create user
       // In a real app, you would hash the password before storing it
-      const user = await storage.createUser({ username, password });
+      const user = await storage.createUser({ username, email, password });
+      
+      // Initialize user stats
+      await initializeUserStats(user.id);
+      
+      // Create a default board for the user
+      await storage.createBoard({
+        title: "My Tasks",
+        userId: user.id
+      });
       
       // Log in the user after registration
       req.login(user, (err) => {
