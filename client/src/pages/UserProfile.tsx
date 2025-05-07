@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AchievementGallery from "@/components/gamification/AchievementGallery";
 import UserStats from "@/components/gamification/UserStats";
 import AchievementNotification from "@/components/gamification/AchievementNotification";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, GamificationAPI } from "@/lib/queryClient";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { RocketIcon, AlertTriangle } from "lucide-react";
 
@@ -87,15 +87,7 @@ export default function UserProfile() {
       // Mark as displayed
       const markDisplayed = async () => {
         try {
-          await fetch('/api/gamification/mark-viewed', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              achievementIds: [achievement.id],
-            }),
-          });
+          await GamificationAPI.markAchievementsAsViewed([achievement.id]);
           
           // Invalidate queries
           queryClient.invalidateQueries({ queryKey: ['/api/gamification/new-achievements'] });

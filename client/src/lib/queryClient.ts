@@ -23,6 +23,43 @@ export async function apiRequest(
   return res;
 }
 
+async function fetchJson<T>(url: string, options: RequestInit = {}): Promise<T> {
+  const response = await fetch(url, {
+    ...options,
+    credentials: "include",
+    headers: {
+      ...options.headers,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  await throwIfResNotOk(response);
+  return await response.json() as T;
+}
+
+// Gamification API endpoints
+export const GamificationAPI = {
+  getUserStats: () => fetchJson('/api/gamification/stats'),
+  getUserBadges: () => fetchJson('/api/gamification/badges'),
+  getAllBadges: () => fetchJson('/api/gamification/all-badges'),
+  getNewAchievements: () => fetchJson('/api/gamification/new-achievements'),
+  markAchievementsAsViewed: (achievementIds: number[]) => fetchJson(
+    '/api/gamification/mark-viewed', 
+    {
+      method: 'POST',
+      body: JSON.stringify({ achievementIds }),
+    }
+  ),
+  getLeaderboard: () => fetchJson('/api/gamification/leaderboard'),
+  triggerTaskCompleted: (taskId: string) => fetchJson(
+    '/api/gamification/trigger-task-completed',
+    {
+      method: 'POST',
+      body: JSON.stringify({ taskId }),
+    }
+  ),
+};
+
 type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
