@@ -20,10 +20,23 @@ export function setupAIChatRoutes(app: Express) {
     }
 
     try {
-      const { messages, taskId } = req.body;
-
-      if (!Array.isArray(messages) || messages.length === 0) {
-        return res.status(400).json({ message: "Messages are required" });
+      const { message, messages, taskId } = req.body;
+      
+      // Handle both new format (single message) and old format (messages array)
+      let processedMessages: any[] = [];
+      
+      if (message) {
+        // New format: Single message string
+        processedMessages = [{
+          role: "user",
+          content: message,
+          timestamp: new Date()
+        }];
+      } else if (Array.isArray(messages) && messages.length > 0) {
+        // Old format: Array of messages
+        processedMessages = messages;
+      } else {
+        return res.status(400).json({ message: "Either message or messages are required" });
       }
 
       // Fetch task context if taskId is provided
@@ -84,7 +97,7 @@ If the user asks you to complete a task that requires external action, explain w
       // Format conversation history for OpenAI API
       const formattedMessages = [
         { role: "system" as const, content: systemInstruction },
-        ...messages.map((msg: Message) => ({
+        ...processedMessages.map((msg: Message) => ({
           role: msg.role as "user" | "assistant" | "system",
           content: msg.content
         }))
