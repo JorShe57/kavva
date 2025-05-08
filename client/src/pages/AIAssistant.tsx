@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useParams, useLocation } from "wouter";
 import { Task } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -23,11 +23,16 @@ import {
   Clock,
   Calendar,
   PlusCircle,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Trophy,
+  BarChart
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
+import { useTasksData } from "@/hooks/use-tasks-data";
+import { useGamificationData } from "@/hooks/use-gamification-data";
+import { useAuth } from "@/hooks/use-auth";
 
 type MessageRole = "user" | "assistant" | "system";
 
@@ -203,50 +208,55 @@ I can help you with recommendations, research, draft emails, or even complete si
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [statusFilter, setStatusFilter] = useState<string>("all"); // Filter tasks by status
   
-  // Fetch all tasks for task selection
-  const { data: allTasks, isLoading: isLoadingAllTasks } = useQuery({
-    queryKey: ["tasks"],
-    queryFn: async () => {
-      const response = await fetch('/api/tasks');
-      if (!response.ok) throw new Error("Failed to fetch tasks");
-      return response.json() as Promise<Task[]>;
-    },
-  });
+  // Get current user info
+  const { user } = useAuth();
   
-  // Fetch related tasks
-  const { data: relatedTasksData, isLoading: isLoadingRelatedTasks } = useQuery({
-    queryKey: ["related-tasks", activeTaskId],
-    queryFn: async () => {
-      if (!activeTaskId) return [];
-      // In a real implementation, this would fetch tasks related to the current task
-      // For now, we'll filter tasks that might be related based on title/description similarity
+  // Use our custom hooks to fetch data from the database
+  const {
+    tasks: allTasks,
+    isLoading: isLoadingAllTasks,
+    filterTasksByStatus,
+    updateTaskMutation
+  } = useTasksData();
+  
+  // Get user gamification data
+  const {
+    userStats,
+    userBadges,
+    isLoading: isLoadingGamification
+  } = useGamificationData();
+  
+  // Get filtered tasks based on status filter
+  const filteredTasks = allTasks ? filterTasksByStatus(statusFilter === "all" ? null : statusFilter) : [];
+  
+  // Fetch related tasks based on active task
+  const relatedTasksData = useMemo(() => {
+    if (!activeTaskId || !allTasks) return [];
+    
+    // Find the active task
+    const activeTask = allTasks.find(t => t.id === Number(activeTaskId));
+    if (!activeTask) return [];
+    
+    // Find tasks that might be related based on keywords in the title or description
+    return allTasks.filter(t => {
+      if (t.id.toString() === activeTaskId) return false;
       
-      if (!allTasks) return [];
+      const titleMatch = t.title.toLowerCase().includes(activeTask.title.toLowerCase()) || 
+                        activeTask.title.toLowerCase().includes(t.title.toLowerCase());
       
-      const activeTask = allTasks.find(t => t.id === Number(activeTaskId));
-      if (!activeTask) return [];
+      const descMatch = t.description && activeTask.description && 
+                        (t.description.toLowerCase().includes(activeTask.description.toLowerCase()) || 
+                        activeTask.description.toLowerCase().includes(t.description.toLowerCase()));
       
-      // Find tasks that might be related based on keywords in the title or description
-      return allTasks.filter(t => {
-        if (t.id.toString() === activeTaskId) return false;
-        
-        const titleMatch = t.title.toLowerCase().includes(activeTask.title.toLowerCase()) || 
-                          activeTask.title.toLowerCase().includes(t.title.toLowerCase());
-        
-        const descMatch = t.description && activeTask.description && 
-                          (t.description.toLowerCase().includes(activeTask.description.toLowerCase()) || 
-                          activeTask.description.toLowerCase().includes(t.description.toLowerCase()));
-        
-        return titleMatch || descMatch;
-      }).slice(0, 3); // Limit to 3 related tasks
-    },
-    enabled: !!activeTaskId && !!allTasks
-  });
+      return titleMatch || descMatch;
+    }).slice(0, 3); // Limit to 3 related tasks
+  }, [activeTaskId, allTasks]);
   
   // Update linked tasks when related tasks data changes
   useEffect(() => {
     if (relatedTasksData) {
-      setLinkedTasks(relatedTasksData);
+      // Need to explicitly type cast to ensure compatibility
+      setLinkedTasks(relatedTasksData as any);
     }
   }, [relatedTasksData]);
   
@@ -462,25 +472,22 @@ I can help you with recommendations, research, draft emails, or even complete si
               </div>
             ) : (
               <div className="space-y-1 p-1">
-                {allTasks
-                  ?.filter(t => statusFilter === "all" || t.status === statusFilter)
-                  .map((t) => (
-                    <Button
-                      key={t.id}
-                      variant={activeTaskId === t.id.toString() ? "default" : "ghost"}
-                      className="w-full justify-start text-left h-auto py-2 px-3"
-                      onClick={() => handleTaskSelection(t.id.toString())}
-                    >
-                      <div>
-                        <div className="font-medium truncate">{t.title}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {t.status} • {t.priority}
-                        </div>
+                {filteredTasks.map((t) => (
+                  <Button
+                    key={t.id}
+                    variant={activeTaskId === t.id.toString() ? "default" : "ghost"}
+                    className="w-full justify-start text-left h-auto py-2 px-3"
+                    onClick={() => handleTaskSelection(t.id.toString())}
+                  >
+                    <div>
+                      <div className="font-medium truncate">{t.title}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {t.status} • {t.priority}
                       </div>
-                    </Button>
-                  ))
-                }
-                {allTasks?.filter(t => statusFilter === "all" || t.status === statusFilter).length === 0 && (
+                    </div>
+                  </Button>
+                ))}
+                {filteredTasks.length === 0 && (
                   <div className="text-center p-4 text-muted-foreground text-sm">
                     No tasks with status "{statusFilter}"
                   </div>
