@@ -14,7 +14,28 @@ export function setupTaskRoutes(app: Express) {
     try {
       const boardId = req.query.boardId as string;
 
-      if (!boardId || isNaN(Number(boardId))) {
+      // If no boardId is provided, get all boards for the user and fetch all tasks
+      if (!boardId) {
+        // Get all boards for this user
+        const boards = await storage.getBoardsByUserId((req.user as any).id);
+        
+        // If no boards found, return empty array
+        if (!boards || boards.length === 0) {
+          return res.json([]);
+        }
+        
+        // Fetch tasks for all boards and flatten them into one array
+        let allTasks = [];
+        for (const board of boards) {
+          const boardTasks = await storage.getTasksByBoardId(String(board.id));
+          allTasks = [...allTasks, ...boardTasks];
+        }
+        
+        return res.json(allTasks);
+      }
+      
+      // If boardId is provided, validate it and fetch tasks for that board
+      if (isNaN(Number(boardId))) {
         return res.status(400).json({ message: "Valid board ID is required" });
       }
 
