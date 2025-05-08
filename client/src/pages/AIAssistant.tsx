@@ -396,6 +396,15 @@ I can help you with recommendations, research, draft emails, or even complete si
     setCompletedSteps(updatedSteps);
   };
   
+  // Function to use a task step as a prompt for the AI
+  const useStepAsPrompt = (step: string) => {
+    const taskContext = task ? `for task "${task.title}"` : "";
+    const prompt = `I need help with this step ${taskContext}: "${step}". Can you provide guidance, resources, or specific instructions on how to complete this effectively?`;
+    setInputValue(prompt);
+    // Focus the input field so user can review or edit before sending
+    inputRef.current?.focus();
+  };
+  
   const handleTaskSelection = (id: string) => {
     setActiveTaskId(id);
     setLocation(`/ai-assistant/${id}`);
@@ -516,76 +525,78 @@ I can help you with recommendations, research, draft emails, or even complete si
             
             {/* Chat Tab */}
             <TabsContent value="chat" className="flex-1 flex flex-col m-0 border-none p-0">
-              <ScrollArea className="flex-1 p-4">
-                <div className="space-y-4 mb-4">
-                  {isLoadingTask ? (
-                    <div className="space-y-4">
-                      <div className="flex items-start">
-                        <Skeleton className="h-10 w-10 rounded-full" />
-                        <div className="ml-4 space-y-2">
-                          <Skeleton className="h-4 w-[250px]" />
-                          <Skeleton className="h-4 w-[400px]" />
+              <div className="flex-1 relative overflow-hidden">
+                <ScrollArea className="h-[calc(100vh-16rem)]">
+                  <div className="p-4 space-y-4">
+                    {isLoadingTask ? (
+                      <div className="space-y-4">
+                        <div className="flex items-start">
+                          <Skeleton className="h-10 w-10 rounded-full" />
+                          <div className="ml-4 space-y-2">
+                            <Skeleton className="h-4 w-[250px]" />
+                            <Skeleton className="h-4 w-[400px]" />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ) : (
-                    messages.map((message) => (
-                      <div
-                        key={message.id}
-                        className={`flex items-start ${
-                          message.role === "user" ? "justify-end" : "justify-start"
-                        }`}
-                      >
-                        {message.role !== "user" && (
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src="/ai-avatar.svg" alt="AI" />
-                            <AvatarFallback>AI</AvatarFallback>
-                          </Avatar>
-                        )}
-                        
+                    ) : (
+                      messages.map((message) => (
                         <div
-                          className={`mx-2 rounded-lg p-4 max-w-[80%] ${
-                            message.role === "user"
-                              ? "bg-primary text-primary-foreground ml-auto"
-                              : "bg-muted"
+                          key={message.id}
+                          className={`flex items-start ${
+                            message.role === "user" ? "justify-end" : "justify-start"
                           }`}
                         >
-                          <p className="whitespace-pre-wrap">{message.content}</p>
-                          <p className="text-xs mt-2 opacity-70">
-                            {message.timestamp.toLocaleTimeString()}
-                          </p>
+                          {message.role !== "user" && (
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src="/ai-avatar.svg" alt="AI" />
+                              <AvatarFallback>AI</AvatarFallback>
+                            </Avatar>
+                          )}
+                          
+                          <div
+                            className={`mx-2 rounded-lg p-4 max-w-[80%] ${
+                              message.role === "user"
+                                ? "bg-primary text-primary-foreground ml-auto"
+                                : "bg-muted"
+                            }`}
+                          >
+                            <p className="whitespace-pre-wrap">{message.content}</p>
+                            <p className="text-xs mt-2 opacity-70">
+                              {message.timestamp.toLocaleTimeString()}
+                            </p>
+                          </div>
+                          
+                          {message.role === "user" && (
+                            <Avatar className="h-10 w-10">
+                              <AvatarFallback>ME</AvatarFallback>
+                            </Avatar>
+                          )}
                         </div>
-                        
-                        {message.role === "user" && (
-                          <Avatar className="h-10 w-10">
-                            <AvatarFallback>ME</AvatarFallback>
-                          </Avatar>
-                        )}
-                      </div>
-                    ))
-                  )}
-                  
-                  {isProcessing && (
-                    <div className="flex items-start">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src="/ai-avatar.svg" alt="AI" />
-                        <AvatarFallback>AI</AvatarFallback>
-                      </Avatar>
-                      <div className="mx-2 rounded-lg p-4 bg-muted max-w-[80%]">
-                        <div className="flex space-x-2">
-                          <div className="h-3 w-3 bg-foreground/40 rounded-full animate-bounce"></div>
-                          <div className="h-3 w-3 bg-foreground/40 rounded-full animate-bounce delay-150"></div>
-                          <div className="h-3 w-3 bg-foreground/40 rounded-full animate-bounce delay-300"></div>
+                      ))
+                    )}
+                    
+                    {isProcessing && (
+                      <div className="flex items-start">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src="/ai-avatar.svg" alt="AI" />
+                          <AvatarFallback>AI</AvatarFallback>
+                        </Avatar>
+                        <div className="mx-2 rounded-lg p-4 bg-muted max-w-[80%]">
+                          <div className="flex space-x-2">
+                            <div className="h-3 w-3 bg-foreground/40 rounded-full animate-bounce"></div>
+                            <div className="h-3 w-3 bg-foreground/40 rounded-full animate-bounce delay-150"></div>
+                            <div className="h-3 w-3 bg-foreground/40 rounded-full animate-bounce delay-300"></div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                  
-                  <div ref={messagesEndRef} />
-                </div>
-              </ScrollArea>
+                    )}
+                    
+                    <div ref={messagesEndRef} />
+                  </div>
+                </ScrollArea>
+              </div>
               
-              <div className="p-3 border-t">
+              <div className="p-3 border-t mt-auto">
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -672,12 +683,14 @@ I can help you with recommendations, research, draft emails, or even complete si
                   {taskSteps.map((step, index) => (
                     <div 
                       key={index} 
-                      className="flex items-start space-x-2 p-3 rounded-md border bg-background hover:bg-accent/50 cursor-pointer transition-colors"
-                      onClick={() => toggleStepCompletion(index)}
+                      className="flex items-start space-x-2 p-3 rounded-md border bg-background hover:bg-accent/50 transition-colors"
                     >
-                      <div className={`flex-shrink-0 h-6 w-6 rounded-full flex items-center justify-center border ${
-                        completedSteps.has(index) ? "bg-primary" : "bg-muted"
-                      }`}>
+                      <div 
+                        className={`flex-shrink-0 h-6 w-6 rounded-full flex items-center justify-center border ${
+                          completedSteps.has(index) ? "bg-primary" : "bg-muted"
+                        } cursor-pointer`}
+                        onClick={() => toggleStepCompletion(index)}
+                      >
                         {completedSteps.has(index) && (
                           <CheckCircle className="h-4 w-4 text-primary-foreground" />
                         )}
@@ -686,9 +699,21 @@ I can help you with recommendations, research, draft emails, or even complete si
                         <div className={`${completedSteps.has(index) ? "line-through text-muted-foreground" : ""}`}>
                           {step}
                         </div>
-                        {completedSteps.has(index) && (
+                        {completedSteps.has(index) ? (
                           <div className="text-xs text-muted-foreground mt-1">
                             Completed
+                          </div>
+                        ) : (
+                          <div className="mt-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+                              onClick={() => useStepAsPrompt(step)}
+                            >
+                              <Bot className="h-3 w-3 mr-1" /> 
+                              Ask AI for help
+                            </Button>
                           </div>
                         )}
                       </div>
