@@ -821,6 +821,74 @@ I can help you with recommendations, research, draft emails, or even complete si
                     </div>
                   </>
                 )}
+                
+                <Separator />
+                
+                {/* User Stats Section */}
+                <div>
+                  <div className="flex items-center mb-2">
+                    <BarChart className="h-4 w-4 mr-2 text-green-500" />
+                    <h4 className="font-semibold">Your Progress</h4>
+                  </div>
+                  
+                  {isLoadingGamification ? (
+                    <div className="space-y-2">
+                      <Skeleton className="h-20 w-full" />
+                      <Skeleton className="h-8 w-1/2" />
+                    </div>
+                  ) : userStats ? (
+                    <div className="space-y-3">
+                      <div className="p-3 bg-muted rounded-md">
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <span>Level {userStats.level}</span>
+                          <span className="font-semibold">{userStats.points} points</span>
+                        </div>
+                        
+                        <Progress 
+                          value={Math.min(100, (userStats.points % 100) / 100 * 100)} 
+                          className="h-2"
+                        />
+                        
+                        <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
+                          <div>
+                            <div className="text-muted-foreground">Tasks completed</div>
+                            <div className="font-semibold">{userStats.tasksCompleted}</div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">Day streak</div>
+                            <div className="font-semibold">{userStats.daysStreak} days</div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {userBadges && userBadges.length > 0 && (
+                        <div>
+                          <div className="flex flex-wrap gap-1">
+                            {userBadges.slice(0, 3).map((badge) => (
+                              <div 
+                                key={badge.id} 
+                                className="flex items-center px-2 py-1 bg-accent rounded-full text-xs"
+                                title={badge.description}
+                              >
+                                <Trophy className="h-3 w-3 mr-1 text-amber-500" />
+                                {badge.name}
+                              </div>
+                            ))}
+                            {userBadges.length > 3 && (
+                              <div className="flex items-center px-2 py-1 bg-accent rounded-full text-xs">
+                                +{userBadges.length - 3} more
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground p-2">
+                      No progress data available
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="p-4 text-center text-muted-foreground">
