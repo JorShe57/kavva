@@ -108,14 +108,15 @@ I can help you with recommendations, research, draft emails, or even complete si
     inputRef.current?.focus();
   }, []);
 
-  const sendMessage = async () => {
-    if (!inputValue.trim()) return;
+  const sendMessage = async (customPrompt?: string) => {
+    const messageText = customPrompt || inputValue;
+    if (!messageText.trim()) return;
     
     // Add user message to the chat
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
       role: "user",
-      content: inputValue,
+      content: messageText,
       timestamp: new Date(),
     };
     
@@ -123,23 +124,12 @@ I can help you with recommendations, research, draft emails, or even complete si
     setInputValue("");
     setIsProcessing(true);
     
+    // Scroll to bottom
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+    
     try {
-      // Prepare chat history for the API
-      const chatHistory: Message[] = messages
-        .filter(msg => msg.role !== "system")
-        .map(msg => ({
-          role: msg.role,
-          content: msg.content,
-          timestamp: msg.timestamp
-        }));
-      
-      // Add the new user message
-      chatHistory.push({
-        role: "user",
-        content: inputValue,
-        timestamp: new Date()
-      });
-      
       // Call API with task context if available
       const response = await fetch("/api/ai/chat", {
         method: "POST",
@@ -147,8 +137,8 @@ I can help you with recommendations, research, draft emails, or even complete si
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          messages: chatHistory,
-          taskId: taskId || null,
+          message: messageText,
+          taskId: task?.id,
         }),
       });
       
@@ -403,6 +393,71 @@ I can help you with recommendations, research, draft emails, or even complete si
     setInputValue(prompt);
     // Focus the input field so user can review or edit before sending
     inputRef.current?.focus();
+  };
+  
+  // Function to use an AI suggestion as a prompt
+  const usePromptSuggestion = (suggestion: string) => {
+    // Auto-send the message without user needing to click send
+    const message: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: suggestion,
+      timestamp: new Date(),
+    };
+    
+    setMessages((prevMessages) => [...prevMessages, message]);
+    setInputValue("");
+    setIsProcessing(true);
+    
+    // Scroll to bottom
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+    
+    // Switch to the chat tab to show the message
+    const chatTab = document.querySelector('[data-value="chat"]') as HTMLElement | null;
+    if (chatTab) {
+      chatTab.click();
+    }
+    
+    // API call to process the message
+    fetch("/api/ai/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: suggestion,
+        taskId: task?.id,
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        const aiResponse: ChatMessage = {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: data.response,
+          timestamp: new Date(),
+        };
+        
+        setMessages((prevMessages) => [...prevMessages, aiResponse]);
+        setIsProcessing(false);
+        
+        // Scroll to bottom
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+      })
+      .catch((error) => {
+        console.error("Error sending message:", error);
+        setIsProcessing(false);
+        
+        toast({
+          title: "Error",
+          description: "Failed to send message. Please try again.",
+          variant: "destructive",
+        });
+      });
   };
   
   const handleTaskSelection = (id: string) => {
@@ -814,8 +869,19 @@ I can help you with recommendations, research, draft emails, or even complete si
                   </div>
                   <div className="space-y-2">
                     {taskSuggestions.map((suggestion, index) => (
-                      <div key={index} className="text-sm p-2 bg-muted rounded-md">
-                        {suggestion}
+                      <div 
+                        key={index} 
+                        className="text-sm p-2 bg-muted rounded-md hover:bg-accent cursor-pointer flex items-start group transition-colors"
+                        onClick={() => usePromptSuggestion(suggestion)}
+                      >
+                        <div className="flex-1">{suggestion}</div>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-5 w-5 ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Send className="h-3 w-3" />
+                        </Button>
                       </div>
                     ))}
                   </div>
