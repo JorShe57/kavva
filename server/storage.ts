@@ -1,8 +1,9 @@
 import { 
-  users, tasks, taskBoards, 
+  users, tasks, taskBoards, userStats, userAchievements,
   type User, type InsertUser, 
   type Task, type InsertTask, 
   type TaskBoard, type InsertTaskBoard,
+  type UserStats, type UserAchievement,
   insertTaskSchema, insertTaskBoardSchema, insertUserSchema
 } from "@shared/schema";
 import { executeDbOperation } from "./db";
@@ -35,6 +36,10 @@ export interface IStorage {
   createTask(task: InsertTask): Promise<Task>;
   updateTask(id: string, task: Partial<Task>): Promise<Task>;
   deleteTask(id: string): Promise<void>;
+  
+  // Gamification methods
+  getUserStats(userId: number): Promise<UserStats | undefined>;
+  getUserAchievements(userId: number): Promise<UserAchievement[]>;
   
   // Session store for authentication persistence
   sessionStore: any;
@@ -483,6 +488,69 @@ export class DatabaseStorage implements IStorage {
       },
       "Task"
     );
+  }
+
+  // Gamification methods
+  async getUserStats(userId: number): Promise<UserStats | undefined> {
+    const storageLogger = logger.child('storage');
+    
+    try {
+      if (!userId || typeof userId !== 'number') {
+        storageLogger.warn(`Invalid user ID: ${userId}`);
+        return undefined;
+      }
+      
+      storageLogger.info(`Fetching stats for user: ${userId}`);
+      
+      // Use cache with database fallback
+      return await getOrSetCache<UserStats | undefined>(
+        userCache,
+        `user:stats:${userId}`,
+        async () => {
+          return await executeDbOperation(async (db) => {
+            const result = await db.select().from(userStats).where(eq(userStats.userId, userId));
+            
+            if (result.length === 0) {
+              storageLogger.info(`Stats not found for user: ${userId}`);
+              return undefined;
+            }
+            
+            return result[0];
+          });
+        }
+      );
+    } catch (error) {
+      storageLogger.error(`Error fetching user stats: ${error instanceof Error ? error.message : String(error)}`);
+      throw new DatabaseError(`Error fetching user stats: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  
+  async getUserAchievements(userId: number): Promise<UserAchievement[]> {
+    const storageLogger = logger.child('storage');
+    
+    try {
+      if (!userId || typeof userId !== 'number') {
+        storageLogger.warn(`Invalid user ID: ${userId}`);
+        return [];
+      }
+      
+      storageLogger.info(`Fetching achievements for user: ${userId}`);
+      
+      // Use cache with database fallback
+      return await getOrSetCache<UserAchievement[]>(
+        userCache,
+        `user:achievements:${userId}`,
+        async () => {
+          return await executeDbOperation(async (db) => {
+            const result = await db.select().from(userAchievements).where(eq(userAchievements.userId, userId));
+            return result;
+          });
+        }
+      );
+    } catch (error) {
+      storageLogger.error(`Error fetching user achievements: ${error instanceof Error ? error.message : String(error)}`);
+      throw new DatabaseError(`Error fetching user achievements: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 }
 

@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { storage } from "./storage";
 import { processEmailWithAI, summarizeTasksWithAI, getTaskRecommendations } from "./openai";
-import { insertTaskSchema } from "@shared/schema";
+import { insertTaskSchema, type Task } from "@shared/schema";
 import { TaskOutput } from "./openai";
 
 export function setupTaskRoutes(app: Express) {
@@ -25,7 +25,7 @@ export function setupTaskRoutes(app: Express) {
         }
         
         // Fetch tasks for all boards and flatten them into one array
-        let allTasks = [];
+        let allTasks: Task[] = [];
         for (const board of boards) {
           const boardTasks = await storage.getTasksByBoardId(String(board.id));
           allTasks = [...allTasks, ...boardTasks];
@@ -170,6 +170,74 @@ export function setupTaskRoutes(app: Express) {
     } catch (error) {
       console.error("Error updating task:", error);
       res.status(500).json({ message: "Failed to update task", error: error instanceof Error ? error.message : String(error) });
+    }
+  });
+
+  // Get a single task by ID
+  app.get("/api/tasks/:id", async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const taskId = req.params.id;
+      const task = await storage.getTask(taskId);
+
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+
+      // Verify task's board belongs to user
+      const board = await storage.getBoard(String(task.boardId));
+
+      if (!board || board.userId !== (req.user as any).id) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      // Return the task with additional details for the AI workspace
+      // Fetch user stats if available
+      let stats = null;
+      try {
+        const userStats = await storage.getUserStats((req.user as any).id);
+        if (userStats) {
+          stats = {
+            taskCompleted: userStats.tasksCompleted,
+            tasksCreated: userStats.tasksCreated,
+            level: userStats.level,
+            points: userStats.points
+          };
+        }
+      } catch (error) {
+        console.error("Error fetching user stats:", error);
+      }
+
+      // Get recommended next steps or prerequisites if available
+      let recommendations: string[] = [];
+      if (task.description) {
+        try {
+          const taskRecs = await getTaskRecommendations({
+            id: String(task.id),
+            title: task.title,
+            description: task.description,
+            dueDate: task.dueDate ? task.dueDate.toISOString() : null,
+            assignee: task.assignee,
+            priority: task.priority,
+            status: task.status
+          });
+          recommendations = taskRecs.recommendations || [];
+        } catch (error) {
+          console.error("Error generating recommendations:", error);
+        }
+      }
+
+      res.json({
+        ...task,
+        recommendations,
+        userStats: stats
+      });
+    } catch (error) {
+      console.error("Error fetching task:", error);
+      res.status(500).json({ message: "Failed to fetch task" });
     }
   });
 
