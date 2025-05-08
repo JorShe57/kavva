@@ -201,6 +201,7 @@ I can help you with recommendations, research, draft emails, or even complete si
   const [taskProgress, setTaskProgress] = useState<number>(0);
   const [relatedResources, setRelatedResources] = useState<{title: string, url: string}[]>([]);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const [statusFilter, setStatusFilter] = useState<string>("all"); // Filter tasks by status
   
   // Fetch all tasks for task selection
   const { data: allTasks, isLoading: isLoadingAllTasks } = useQuery({
@@ -417,7 +418,42 @@ I can help you with recommendations, research, draft emails, or even complete si
             <ListChecks className="h-5 w-5 mr-2" />
             <h3>My Tasks</h3>
           </div>
-          <ScrollArea className="h-[calc(100%-3rem)] p-2">
+          <div className="p-2 border-b flex items-center gap-1 text-xs">
+            <span className="text-muted-foreground">Filter:</span>
+            <Button 
+              variant={statusFilter === "all" ? "default" : "outline"} 
+              size="sm" 
+              className="h-6 text-xs px-2"
+              onClick={() => setStatusFilter("all")}
+            >
+              All
+            </Button>
+            <Button 
+              variant={statusFilter === "to-do" ? "default" : "outline"} 
+              size="sm" 
+              className="h-6 text-xs px-2"
+              onClick={() => setStatusFilter("to-do")}
+            >
+              To Do
+            </Button>
+            <Button 
+              variant={statusFilter === "in-progress" ? "default" : "outline"} 
+              size="sm" 
+              className="h-6 text-xs px-2"
+              onClick={() => setStatusFilter("in-progress")}
+            >
+              In Progress
+            </Button>
+            <Button 
+              variant={statusFilter === "completed" ? "default" : "outline"} 
+              size="sm" 
+              className="h-6 text-xs px-2"
+              onClick={() => setStatusFilter("completed")}
+            >
+              Completed
+            </Button>
+          </div>
+          <ScrollArea className="h-[calc(100%-6.5rem)] p-2">
             {isLoadingAllTasks ? (
               <div className="space-y-2 p-2">
                 <Skeleton className="h-12 w-full" />
@@ -426,21 +462,29 @@ I can help you with recommendations, research, draft emails, or even complete si
               </div>
             ) : (
               <div className="space-y-1 p-1">
-                {allTasks?.map((t) => (
-                  <Button
-                    key={t.id}
-                    variant={activeTaskId === t.id.toString() ? "default" : "ghost"}
-                    className="w-full justify-start text-left h-auto py-2 px-3"
-                    onClick={() => handleTaskSelection(t.id.toString())}
-                  >
-                    <div>
-                      <div className="font-medium truncate">{t.title}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {t.status} • {t.priority}
+                {allTasks
+                  ?.filter(t => statusFilter === "all" || t.status === statusFilter)
+                  .map((t) => (
+                    <Button
+                      key={t.id}
+                      variant={activeTaskId === t.id.toString() ? "default" : "ghost"}
+                      className="w-full justify-start text-left h-auto py-2 px-3"
+                      onClick={() => handleTaskSelection(t.id.toString())}
+                    >
+                      <div>
+                        <div className="font-medium truncate">{t.title}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {t.status} • {t.priority}
+                        </div>
                       </div>
-                    </div>
-                  </Button>
-                ))}
+                    </Button>
+                  ))
+                }
+                {allTasks?.filter(t => statusFilter === "all" || t.status === statusFilter).length === 0 && (
+                  <div className="text-center p-4 text-muted-foreground text-sm">
+                    No tasks with status "{statusFilter}"
+                  </div>
+                )}
               </div>
             )}
           </ScrollArea>
