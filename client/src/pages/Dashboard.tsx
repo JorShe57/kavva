@@ -15,7 +15,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Task, TaskBoard as TaskBoardType } from "@shared/schema";
+import { Task as BaseTask, TaskBoard as TaskBoardType } from "@shared/schema";
+
+// Extended Task interface with workflow generation properties
+interface Task extends Omit<BaseTask, 'generateWorkflow'> {
+  generateWorkflow?: boolean | null;
+}
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Sparkles } from "lucide-react";
@@ -110,7 +115,7 @@ export default function Dashboard() {
     }
   }, [loading, user, navigate]);
 
-  const handleProcessEmail = async (emailContent: string, boardId: string, assignmentOption: string) => {
+  const handleProcessEmail = async (emailContent: string, boardId: string, assignmentOption: string, generateWorkflow: boolean) => {
     setIsProcessing(true);
     setProcessingProgress(0);
     
@@ -135,7 +140,8 @@ export default function Dashboard() {
         body: JSON.stringify({
           emailContent,
           boardId,
-          assignmentOption
+          assignmentOption,
+          generateWorkflow
         }),
         credentials: 'include'
       });
@@ -153,13 +159,14 @@ export default function Dashboard() {
       setTimeout(() => {
         setIsProcessing(false);
         
-        // Ensure all tasks have the correct boardId
-        const tasksWithBoardId = (data.tasks || []).map(task => ({
-          ...task,
-          boardId: boardId // Set the boardId from the email processor
-        }));
-        
-        setExtractedTasks(tasksWithBoardId);
+      // Ensure all tasks have the correct boardId and workflow flag
+      const tasksWithBoardId = (data.tasks || []).map((task: any) => ({
+        ...task,
+        boardId: boardId, // Set the boardId from the email processor
+        generateWorkflow: generateWorkflow // Add the workflow generation flag
+      }));
+      
+      setExtractedTasks(tasksWithBoardId);
         setShowResultsModal(true);
       }, 500);
       
@@ -202,7 +209,8 @@ export default function Dashboard() {
         priority: task.priority || "medium",
         status: task.status || "todo",
         boardId: Number(targetBoardId), // Must be a number, not string
-        emailSource: ""
+        emailSource: task.emailSource || "",
+        generateWorkflow: task.generateWorkflow // Pass the workflow generation flag
       }));
       
       console.log('Sending tasks to server:', cleanedTasks);
@@ -229,15 +237,47 @@ export default function Dashboard() {
       const createdTasks = await response.json();
       console.log('Created tasks:', createdTasks);
       
+      // Generate workflows for each task if needed
+      if (tasks.some((task: any) => task.generateWorkflow)) {
+        toast({
+          title: "Generating Workflows",
+          description: "AI is creating workflows for your tasks...",
+        });
+        
+        // Generate workflows for each task in parallel
+        const workflowPromises = createdTasks
+          .filter((task: any) => task.generateWorkflow)
+          .map((task: any) => 
+            fetch('/api/ai/generate-workflow', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ taskId: task.id }),
+              credentials: 'include'
+            }).catch(err => {
+              console.error(`Error generating workflow for task ${task.id}:`, err);
+              return null;
+            })
+          );
+        
+        await Promise.all(workflowPromises);
+      }
+      
       // Invalidate tasks query for both activeBoard and targetBoardId
       queryClient.invalidateQueries({ queryKey: ['/api/tasks', targetBoardId] });
       if (activeBoard && activeBoard !== targetBoardId) {
         queryClient.invalidateQueries({ queryKey: ['/api/tasks', activeBoard] });
       }
       setShowResultsModal(false);
+      
+      const successMessage = tasks.some((task: any) => task.generateWorkflow)
+        ? `${tasks.length} task${tasks.length !== 1 ? 's' : ''} added with AI workflows`
+        : `${tasks.length} task${tasks.length !== 1 ? 's' : ''} added to board`;
+      
       toast({
         title: "Success",
-        description: `${tasks.length} task${tasks.length !== 1 ? 's' : ''} added to board`
+        description: successMessage
       });
     } catch (error) {
       console.error('Error adding tasks:', error);
@@ -394,9 +434,9 @@ export default function Dashboard() {
       )}
       
       <ProcessingModal 
-        isOpen={isProcessing} 
-        progress={processingProgress}
+        isOpen={isProcessing}
         onCancel={() => setIsProcessing(false)} 
+        progress={processingProgress}
       />
       
       <ResultsModal 

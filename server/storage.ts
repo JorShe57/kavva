@@ -413,9 +413,13 @@ export class DatabaseStorage implements IStorage {
       throw new NotFoundError("Task");
     }
     
-    // Ensure completedAt is a valid Date object
+    // Ensure date fields are valid Date objects
     if (taskUpdate.completedAt) {
       taskUpdate.completedAt = new Date(taskUpdate.completedAt);
+    }
+    
+    if (taskUpdate.dueDate) {
+      taskUpdate.dueDate = new Date(taskUpdate.dueDate);
     }
     
     // Create a partial schema that only requires the fields that are being updated

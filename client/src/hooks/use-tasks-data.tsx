@@ -1,19 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-
-export interface Task {
-  id: number;
-  title: string;
-  description: string;
-  status: string;
-  priority: string;
-  dueDate?: string;
-  boardId: number;
-  completedAt?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { Task } from "@shared/schema";
 
 export interface Board {
   id: number;

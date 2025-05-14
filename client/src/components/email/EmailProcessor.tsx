@@ -1,13 +1,15 @@
-
 import { useState, DragEvent } from "react";
-import { TaskBoard } from "@shared/schema";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TaskBoard, Task } from "@shared/schema";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Sparkles, Workflow } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface EmailProcessorProps {
-  onSubmit: (emailContent: string, boardId: string, assignmentOption: string) => void;
+  onSubmit: (emailContent: string, boardId: string, assignmentOption: string, generateWorkflow: boolean) => void;
   boards: TaskBoard[];
 }
 
@@ -16,6 +18,7 @@ export default function EmailProcessor({ onSubmit, boards }: EmailProcessorProps
   const [selectedBoard, setSelectedBoard] = useState("");
   const [assignmentOption, setAssignmentOption] = useState("assignToMe");
   const [isDragging, setIsDragging] = useState(false);
+  const [generateWorkflow, setGenerateWorkflow] = useState(true);
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +38,7 @@ export default function EmailProcessor({ onSubmit, boards }: EmailProcessorProps
       return;
     }
     
-    onSubmit(emailContent, selectedBoard, assignmentOption);
+    onSubmit(emailContent, selectedBoard, assignmentOption, generateWorkflow);
   };
   
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
@@ -73,6 +76,9 @@ export default function EmailProcessor({ onSubmit, boards }: EmailProcessorProps
     <Card className="bg-white rounded-lg shadow-sm">
       <CardHeader>
         <CardTitle>Process Email for Tasks</CardTitle>
+        <CardDescription>
+          Extract tasks from emails and automatically generate AI workflows
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit}>
@@ -142,6 +148,28 @@ export default function EmailProcessor({ onSubmit, boards }: EmailProcessorProps
             </div>
           </div>
           
+          <div className="mb-6">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="generate-workflow" 
+                checked={generateWorkflow}
+                onCheckedChange={(checked) => setGenerateWorkflow(checked as boolean)}
+              />
+              <div className="grid gap-1.5 leading-none">
+                <Label
+                  htmlFor="generate-workflow"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center"
+                >
+                  <Workflow className="h-4 w-4 mr-2 text-blue-500" />
+                  Generate AI Workflow for Tasks
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Automatically create a detailed workflow with steps, resources, and insights for each task
+                </p>
+              </div>
+            </div>
+          </div>
+          
           <div className="flex justify-end space-x-4">
             <Button 
               type="button" 
@@ -153,13 +181,22 @@ export default function EmailProcessor({ onSubmit, boards }: EmailProcessorProps
             
             <Button 
               type="submit" 
-              variant="default" 
-              className="inline-flex items-center"
+              variant={generateWorkflow ? "default" : "default"}
+              className={`inline-flex items-center ${generateWorkflow ? 'bg-gradient-to-r from-blue-600 to-indigo-600' : ''}`}
             >
-              <span>Process with AI</span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2a1 1 0 0 1 .996.93l.018.188.001 2.688L15.293 3.3a1 1 0 0 1 1.403 0h.001a1 1 0 0 1 0 1.403h-.001l-3.276 3.276.114.012a7.5 7.5 0 0 1 6.286 6.177L20 14.998a1 1 0 1 1-2 .16l-.005-.16a5.487 5.487 0 0 0-4.825-4.994l-.169-.01L16.293 13.3a1 1 0 0 1 0 1.403l-.083.094a1 1 0 0 1-1.32.083l-2.889-2.3v2.229a1 1 0 0 1-1.993.117L10 14.811v-2.725l-3.293 3.29a1 1 0 0 1-1.403-1.404L8.58 10.7a5.5 5.5 0 0 0-4.066 3.939 1 1 0 0 1-1.934-.502A7.5 7.5 0 0 1 8.82 7.222l-3.114-3.116a1 1 0 0 1 1.403-1.419l.094.083 2.796 2.796V3a1 1 0 0 1 1-1z" />
-              </svg>
+              {generateWorkflow ? (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  <span>Process with AI Workflow</span>
+                </>
+              ) : (
+                <>
+                  <span>Process with AI</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2a1 1 0 0 1 .996.93l.018.188.001 2.688L15.293 3.3a1 1 0 0 1 1.403 0h.001a1 1 0 0 1 0 1.403h-.001l-3.276 3.276.114.012a7.5 7.5 0 0 1 6.286 6.177L20 14.998a1 1 0 1 1-2 .16l-.005-.16a5.487 5.487 0 0 0-4.825-4.994l-.169-.01L16.293 13.3a1 1 0 0 1 0 1.403l-.083.094a1 1 0 0 1-1.32.083l-2.889-2.3v2.229a1 1 0 0 1-1.993.117L10 14.811v-2.725l-3.293 3.29a1 1 0 0 1-1.403-1.404L8.58 10.7a5.5 5.5 0 0 0-4.066 3.939 1 1 0 0 1-1.934-.502A7.5 7.5 0 0 1 8.82 7.222l-3.114-3.116a1 1 0 0 1 1.403-1.419l.094.083 2.796 2.796V3a1 1 0 0 1 1-1z" />
+                  </svg>
+                </>
+              )}
             </Button>
           </div>
         </form>

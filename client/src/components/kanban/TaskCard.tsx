@@ -31,7 +31,7 @@ export default function TaskCard({ task, onClick, onStatusChange }: TaskCardProp
   
   return (
     <div 
-      className="task-card bg-white rounded-md shadow-sm p-4 cursor-pointer relative"
+      className="task-card bg-card rounded-md shadow-sm p-4 cursor-pointer relative border"
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -88,7 +88,7 @@ export default function TaskCard({ task, onClick, onStatusChange }: TaskCardProp
       
       {/* Task Action Button */}
       {showActions && (
-        <div className="task-actions absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-white via-white to-transparent">
+        <div className="task-actions absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-card via-card to-transparent">
           <TaskActionButton task={task} onStatusChange={onStatusChange} />
         </div>
       )}

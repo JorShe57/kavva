@@ -40,12 +40,9 @@ export default function TaskActionButton({ task, onStatusChange }: TaskActionBut
         `/api/tasks/${taskId}`,
         { 
           status: 'completed', 
-          completedAt: now,
-          title: task.title,
-          description: task.description,
-          priority: task.priority,
-          assignee: task.assignee,
-          boardId: task.boardId
+          completedAt: now.toISOString(),
+          // No need to send all these fields for a status update
+          // Only send what's changing
         }
       ).then(res => res.json());
       
@@ -87,18 +84,18 @@ export default function TaskActionButton({ task, onStatusChange }: TaskActionBut
       const updatedTask = await apiRequest(
         'PATCH',
         `/api/tasks/${taskId}`,
-        { status: 'in_progress', completedAt: null }
+        { status: 'inprogress', completedAt: null }
       ).then(res => res.json());
       
       // Update UI
       if (onStatusChange) {
-        onStatusChange(updatedTask, 'in_progress');
+        onStatusChange(updatedTask, 'inprogress');
       }
       
       // Show success message
       toast({
         title: "Task reopened",
-        description: "Task has been moved back to in-progress",
+        description: "Task has been moved back to In Progress",
       });
       
       // Invalidate queries to refresh data

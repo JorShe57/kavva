@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState, useRef, useEffect } from 'react';
+import { Task } from "@shared/schema";
 import { useMutation, useQuery } from '@tanstack/react-query';
 import ForceGraph2D from 'react-force-graph-2d';
 import { useResizeObserver } from '@/hooks/use-resize-observer';

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TaskBoard } from "@shared/schema";
+import { TaskBoard, Task } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";

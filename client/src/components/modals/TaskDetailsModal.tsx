@@ -57,6 +57,13 @@ export default function TaskDetailsModal({ task, onClose, onSave }: TaskDetailsM
       // Check if this is a new task or existing task
       const isNewTask = !task.id || task.id.toString().startsWith('temp-');
       
+      // Prepare the task data with proper date formatting
+      const preparedTaskData = {
+        ...taskData,
+        // Ensure dates are in ISO format
+        dueDate: taskData.dueDate ? new Date(taskData.dueDate).toISOString() : null,
+      };
+      
       if (isNewTask) {
         // Create new task
         const response = await fetch('/api/tasks', {
@@ -64,7 +71,7 @@ export default function TaskDetailsModal({ task, onClose, onSave }: TaskDetailsM
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(taskData),
+          body: JSON.stringify(preparedTaskData),
           credentials: 'include'
         });
         
@@ -87,7 +94,7 @@ export default function TaskDetailsModal({ task, onClose, onSave }: TaskDetailsM
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(taskData),
+          body: JSON.stringify(preparedTaskData),
           credentials: 'include'
         });
         
@@ -262,6 +269,20 @@ export default function TaskDetailsModal({ task, onClose, onSave }: TaskDetailsM
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          
+          <div className="grid gap-2">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="generateWorkflow"
+                checked={!!taskData.generateWorkflow}
+                onChange={(e) => setTaskData(prev => ({ ...prev, generateWorkflow: e.target.checked }))}
+                className="rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <Label htmlFor="generateWorkflow">Generate AI Workflow</Label>
+            </div>
+            <p className="text-sm text-muted-foreground">When enabled, an AI-powered workflow will be generated to help complete this task efficiently.</p>
           </div>
           
           {task.emailSource && (

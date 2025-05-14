@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { Task } from "@shared/schema";
+import { Task as BaseTask } from "@shared/schema";
+
+// Extended Task interface with workflow generation properties
+interface Task extends Omit<BaseTask, 'generateWorkflow'> {
+  generateWorkflow?: boolean | null;
+}
 import TaskCard from "./TaskCard";
 import QuickSummaryButton from "./QuickSummaryButton";
 import { cn, statusColors } from "@/lib/utils";
@@ -61,7 +66,7 @@ export default function TaskBoard({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+    <div className="bg-card rounded-lg shadow-sm p-6 mb-8 border">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-lg font-semibold text-foreground">Task Board</h2>
@@ -107,7 +112,7 @@ export default function TaskBoard({
             </button>
             
             {showShareOptions && (
-              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-border">
+              <div className="absolute right-0 top-full mt-2 w-48 bg-card rounded-md shadow-lg z-10 border border-border">
                 <div className="py-1">
                   <button 
                     className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted"
@@ -181,7 +186,7 @@ export default function TaskBoard({
               {loading ? (
                 // Skeleton loader
                 Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="bg-white rounded-md shadow-sm p-4">
+                  <div key={i} className="bg-card rounded-md shadow-sm p-4 border">
                     <Skeleton className="h-6 w-3/4 mb-3" />
                     <Skeleton className="h-4 w-full mb-2" />
                     <Skeleton className="h-4 w-2/3 mb-3" />
@@ -201,7 +206,7 @@ export default function TaskBoard({
                   />
                 ))
               ) : (
-                <div className="bg-white rounded-md shadow-sm p-4 text-center text-muted-foreground">
+                <div className="bg-card rounded-md shadow-sm p-4 text-center text-muted-foreground border">
                   No tasks to do
                 </div>
               )}
@@ -253,7 +258,7 @@ export default function TaskBoard({
               {loading ? (
                 // Skeleton loader
                 Array.from({ length: 2 }).map((_, i) => (
-                  <div key={i} className="bg-white rounded-md shadow-sm p-4">
+                  <div key={i} className="bg-card rounded-md shadow-sm p-4 border">
                     <Skeleton className="h-6 w-3/4 mb-3" />
                     <Skeleton className="h-4 w-full mb-2" />
                     <Skeleton className="h-4 w-2/3 mb-3" />
@@ -273,7 +278,7 @@ export default function TaskBoard({
                   />
                 ))
               ) : (
-                <div className="bg-white rounded-md shadow-sm p-4 text-center text-muted-foreground">
+                <div className="bg-card rounded-md shadow-sm p-4 text-center text-muted-foreground border">
                   No tasks in progress
                 </div>
               )}
@@ -325,7 +330,7 @@ export default function TaskBoard({
               {loading ? (
                 // Skeleton loader
                 Array.from({ length: 2 }).map((_, i) => (
-                  <div key={i} className="bg-white rounded-md shadow-sm p-4">
+                  <div key={i} className="bg-card rounded-md shadow-sm p-4 border">
                     <Skeleton className="h-6 w-3/4 mb-3" />
                     <Skeleton className="h-4 w-full mb-2" />
                     <Skeleton className="h-4 w-2/3 mb-3" />
@@ -345,7 +350,7 @@ export default function TaskBoard({
                   />
                 ))
               ) : (
-                <div className="bg-white rounded-md shadow-sm p-4 text-center text-muted-foreground">
+                <div className="bg-card rounded-md shadow-sm p-4 text-center text-muted-foreground border">
                   No completed tasks
                 </div>
               )}

@@ -25,8 +25,11 @@ import {
   PlusCircle,
   Link as LinkIcon,
   Trophy,
-  BarChart
+  BarChart,
+  Workflow,
+  Sparkles
 } from "lucide-react";
+import AIWorkflowGenerator, { WorkflowData } from "@/components/ai/AIWorkflowGenerator";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
@@ -197,6 +200,8 @@ I can help you with recommendations, research, draft emails, or even complete si
   const [relatedResources, setRelatedResources] = useState<{title: string, url: string}[]>([]);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [statusFilter, setStatusFilter] = useState<string>("all"); // Filter tasks by status
+  const [workflow, setWorkflow] = useState<WorkflowData | null>(null);
+  const [workspaceTab, setWorkspaceTab] = useState<string>("chat");
   
   // Get current user info
   const { user } = useAuth();
@@ -260,53 +265,24 @@ I can help you with recommendations, research, draft emails, or even complete si
     }
   }, [completedSteps, taskSteps]);
   
+  // Handle workflow generation
+  const handleWorkflowGenerated = (generatedWorkflow: WorkflowData) => {
+    setWorkflow(generatedWorkflow);
+    
+    // Update task steps based on workflow
+    const workflowSteps = generatedWorkflow.steps.map(step => step.title);
+    setTaskSteps(workflowSteps);
+    
+    // Update work notes with workflow information
+    setWorkNotes(`# Working on: ${task?.title || "Task"}\n\n## Workflow: ${generatedWorkflow.title}\n\n## Objective\n${task?.description || "No description provided"}\n\n## Approach\n${generatedWorkflow.description}\n\n## Steps\n${generatedWorkflow.steps.map((step, index) => `${index + 1}. ${step.title}`).join('\n')}\n\n## Notes\n- `);
+    
+    // Switch to the workflow tab
+    setWorkspaceTab("workflow");
+  };
+
   // Auto-generate notes, suggestions, and resources when task is selected
   useEffect(() => {
     if (task && task.description) {
-      // Generate task-specific steps based on task content
-      let generatedSteps: string[] = [];
-      
-      if (task.title.toLowerCase().includes("review") || task.title.toLowerCase().includes("analyze")) {
-        generatedSteps = [
-          "Review task requirements and details",
-          "Identify key points and questions",
-          "Research any unclear concepts",
-          "Analyze findings and note observations",
-          "Compile feedback or recommendations",
-          "Finalize review and submit conclusions"
-        ];
-      } else if (task.title.toLowerCase().includes("create") || task.title.toLowerCase().includes("develop")) {
-        generatedSteps = [
-          "Define requirements and scope",
-          "Research best practices and examples",
-          "Create initial draft or prototype",
-          "Test functionality and gather feedback",
-          "Revise based on feedback",
-          "Finalize and deliver the completed work"
-        ];
-      } else if (task.title.toLowerCase().includes("plan") || task.title.toLowerCase().includes("schedule")) {
-        generatedSteps = [
-          "Define goals and objectives",
-          "Identify required resources and constraints",
-          "Create timeline and milestone schedule",
-          "Assign responsibilities and tasks",
-          "Establish tracking and reporting mechanisms",
-          "Finalize plan and distribute to stakeholders"
-        ];
-      } else {
-        // Default steps
-        generatedSteps = [
-          "Review task requirements and details",
-          "Gather necessary resources and information",
-          "Outline approach and strategy",
-          "Execute the main task components",
-          "Test and validate results",
-          "Finalize and submit completed work"
-        ];
-      }
-      
-      setTaskSteps(generatedSteps);
-      
       // Set initial work notes with enhanced template
       setWorkNotes(`# Working on: ${task.title}\n\n## Objective\n${task.description || "No description provided"}\n\n## Notes\n- `);
       
@@ -329,13 +305,13 @@ I can help you with recommendations, research, draft emails, or even complete si
         }
       }
       
-      // Add general suggestions
+      // Add AI-focused suggestions
       suggestions = [
         ...suggestions,
-        "Break down this task into smaller components",
-        "Research similar approaches or best practices",
-        "Consider setting milestone deadlines for each step",
-        "Document your progress as you complete each step"
+        "Generate an AI workflow to break down this task",
+        "Ask the AI for help with specific steps",
+        "Use the AI to draft content related to this task",
+        "Request the AI to research information for this task"
       ];
       
       setTaskSuggestions(suggestions);
@@ -487,7 +463,7 @@ I can help you with recommendations, research, draft emails, or even complete si
       
       <div className="grid grid-cols-12 gap-4 h-[calc(100vh-10rem)]">
         {/* Left Sidebar - Task Selection */}
-        <div className="col-span-3 bg-card rounded-lg border shadow-sm overflow-hidden">
+        <div className="col-span-2 bg-card rounded-lg border shadow-sm overflow-hidden">
           <div className="p-4 bg-muted font-medium flex items-center">
             <ListChecks className="h-5 w-5 mr-2" />
             <h3>My Tasks</h3>
@@ -562,12 +538,15 @@ I can help you with recommendations, research, draft emails, or even complete si
         </div>
         
         {/* Main Workspace Area */}
-        <div className="col-span-6 bg-card rounded-lg border shadow-sm overflow-hidden flex flex-col">
-          <Tabs defaultValue="chat" className="flex flex-col h-full">
+        <div className="col-span-7 bg-card rounded-lg border shadow-sm overflow-hidden flex flex-col">
+          <Tabs value={workspaceTab} onValueChange={setWorkspaceTab} className="flex flex-col h-full">
             <div className="p-1 px-3 bg-muted border-b">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="chat" className="text-xs">
                   <Bot className="h-4 w-4 mr-1" /> AI Chat
+                </TabsTrigger>
+                <TabsTrigger value="workflow" className="text-xs">
+                  <Workflow className="h-4 w-4 mr-1" /> AI Workflow
                 </TabsTrigger>
                 <TabsTrigger value="notes" className="text-xs">
                   <FileText className="h-4 w-4 mr-1" /> Work Notes
@@ -678,6 +657,14 @@ I can help you with recommendations, research, draft emails, or even complete si
                   </Button>
                 </form>
               </div>
+            </TabsContent>
+            
+            {/* AI Workflow Tab */}
+            <TabsContent value="workflow" className="flex-1 m-0 border-none p-3 overflow-auto">
+              <AIWorkflowGenerator 
+                task={task || null} 
+                onWorkflowGenerated={handleWorkflowGenerated}
+              />
             </TabsContent>
             
             {/* Work Notes Tab */}

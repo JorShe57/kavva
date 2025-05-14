@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, foreignKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -47,6 +47,32 @@ export const tasks = pgTable("tasks", {
   dependentTaskIds: text("dependent_task_ids").array(),
   // Store array of prerequisite task IDs (tasks that this task depends on)
   prerequisiteTaskIds: text("prerequisite_task_ids").array(),
+  // Flag to indicate if a workflow should be generated for this task
+  generateWorkflow: boolean("generate_workflow").default(false),
+});
+
+// Workflow schema
+export const workflows = pgTable("workflows", {
+  id: serial("id").primaryKey(),
+  taskId: integer("task_id").notNull().references(() => tasks.id, { onDelete: 'cascade' }),
+  title: text("title").notNull(),
+  description: text("description"),
+  steps: jsonb("steps").notNull().default('[]'),
+  insights: jsonb("insights").notNull().default('[]'),
+  similarTasks: jsonb("similar_tasks").default('[]'),
+  estimatedTotalTime: text("estimated_total_time"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertWorkflowSchema = createInsertSchema(workflows).pick({
+  taskId: true,
+  title: true,
+  description: true,
+  steps: true,
+  insights: true,
+  similarTasks: true,
+  estimatedTotalTime: true,
 });
 
 export const insertTaskSchema = createInsertSchema(tasks).pick({
@@ -60,6 +86,7 @@ export const insertTaskSchema = createInsertSchema(tasks).pick({
   emailSource: true,
   dependentTaskIds: true,
   prerequisiteTaskIds: true,
+  generateWorkflow: true,
 });
 
 // Achievement badges schema
@@ -134,3 +161,6 @@ export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;
 
 export type UserStats = typeof userStats.$inferSelect;
 export type InsertUserStats = z.infer<typeof insertUserStatsSchema>;
+
+export type Workflow = typeof workflows.$inferSelect;
+export type InsertWorkflow = z.infer<typeof insertWorkflowSchema>;
