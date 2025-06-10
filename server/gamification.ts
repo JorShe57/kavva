@@ -8,7 +8,7 @@ import {
   type UserAchievement, 
   type UserStats
 } from "@shared/schema";
-import { eq, and, gt, gte } from "drizzle-orm";
+import { eq, and, gt, gte, inArray } from "drizzle-orm";
 
 export interface BadgeResult {
   earned: boolean;
@@ -410,13 +410,17 @@ export async function getNewAchievements(userId: number): Promise<UserAchievemen
 
 // Mark achievements as displayed
 export async function markAchievementsAsDisplayed(userId: number, achievementIds: number[]) {
+  if (achievementIds.length === 0) {
+    return;
+  }
+
   await executeDbOperation(async (db) => {
     await db.update(userAchievements)
       .set({ displayed: true })
       .where(
         and(
           eq(userAchievements.userId, userId),
-          eq(userAchievements.displayed, false)
+          inArray(userAchievements.id, achievementIds)
         )
       );
   });
